@@ -57,6 +57,13 @@ A polished full-stack web application where users submit tasks through a simple 
     - Message types: user (right), system (logs), assistant (final output)
     - Added `/api/jobs/:id/logs` endpoint for clean log polling
     - Robust error handling for async state updates and log reordering
+  - **Connectors Page & Architecture (2025-11-15)**:
+    - Created `/connectors` page showing Gmail and Calendar status
+    - Added `GET /api/connectors/status` endpoint to check authorization
+    - **Key Architecture**: Authorize once via Replit = all agents get access
+    - Tokens fetched server-side from Replit's API, shared across all agent executions
+    - No per-agent authorization needed - single OAuth flow covers entire marketplace
+    - Status page shows which agents use which connectors
 
 ## Project Architecture
 
@@ -70,6 +77,7 @@ A polished full-stack web application where users submit tasks through a simple 
 - **My Agents** (`/my-agents`): Developer workspace for managing created agents
 - **AI Builder** (`/builder/ai`): Visual form-based agent builder with auto-generated Claude Agent SDK code
 - **Custom Code Builder** (`/builder/code`): Advanced editor for developers with existing Claude SDK code
+- **Connectors** (`/connectors`): Manage Gmail and Calendar integrations with status display and connection instructions
 
 ### Backend
 - **Storage**: In-memory storage (MemStorage) for jobs, bids, payments, logs, developers, marketplace agents, reviews, negotiations
@@ -87,6 +95,7 @@ A polished full-stack web application where users submit tasks through a simple 
   - Job Management: `POST /api/jobs`, `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/jobs/:id/logs`, `POST /api/jobs/:id/bids`, `POST /api/jobs/:id/select`, `POST /api/jobs/:id/execute`, `POST /api/jobs/:id/payment`
   - Marketplace: `GET /api/marketplace/agents`, `GET /api/payments`
   - Developer Agents: `GET /api/dev/agents`, `POST /api/dev/agents`, `PATCH /api/dev/agents/:id`, `DELETE /api/dev/agents/:id`
+  - Connectors: `GET /api/connectors/status`, `GET /api/connectors/:id/authorize`
 - **Negotiation Strategies**: 
   - Aggressive: High starting price, minimal concessions
   - Balanced: Fair pricing, moderate flexibility
