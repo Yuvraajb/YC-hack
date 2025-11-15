@@ -418,7 +418,7 @@ export async function executeAgentTask(options: AgentExecutionOptions): Promise<
           "custom-tools": customToolsServer
         },
         allowedTools,
-        permissionMode: "acceptEdits",
+        permissionMode: "bypassPermissions",  // Bypass all permission prompts for MCP tools
         includePartialMessages: true  // Enable streaming text deltas
       }
     });

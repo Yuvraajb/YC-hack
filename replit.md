@@ -24,6 +24,7 @@ A polished full-stack web application where users submit tasks through a simple 
     - Created "WebExplorer Vision" - specialized agent with WebSearch + generate_image tools
     - Fixed event streaming to properly capture agent responses using stream_event handlers
     - Maintained HH:MM:SS timestamp formatting for execution logs
+    - **Permission Mode**: Set to "bypassPermissions" to auto-accept all tool calls without asking users
   - **Multi-Model Integration via OpenRouter**:
     - Integrated OpenRouter API to enable agents to call any AI model as tools
     - Created OpenRouterClient with retry logic, rate limiting, and token tracking
