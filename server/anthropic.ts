@@ -6,6 +6,23 @@ const anthropic = new Anthropic({
   baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
 });
 
+function safeParseJSON(text: string, functionName: string): any {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error(`[${functionName}] No JSON found in response:`, text);
+    throw new Error(`${functionName}: No JSON object found in AI response`);
+  }
+  
+  try {
+    return JSON.parse(jsonMatch[0]);
+  } catch (error: any) {
+    console.error(`[${functionName}] JSON parse error:`, error.message);
+    console.error(`[${functionName}] Raw text:`, text);
+    console.error(`[${functionName}] Attempted to parse:`, jsonMatch[0]);
+    throw new Error(`${functionName}: Failed to parse JSON - ${error.message}`);
+  }
+}
+
 export interface TaskBreakdown {
   tasks: Array<{
     type: "web_scraping" | "analysis" | "writing";
@@ -53,12 +70,9 @@ Return JSON only: {"tasks": [{"type": "web_scraping", "description": "...", "req
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
+    return safeParseJSON(content.text, "breakdownResearchRequest");
   }
-  throw new Error("Failed to parse task breakdown");
+  throw new Error("breakdownResearchRequest: Non-text response from AI");
 }
 
 export async function calculateBid(
@@ -88,12 +102,9 @@ Return JSON only: {"bidPrice": 2.50, "reasoning": "...", "estimatedTimeSeconds":
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
+    return safeParseJSON(content.text, "calculateBid");
   }
-  throw new Error("Failed to parse bid calculation");
+  throw new Error("calculateBid: Non-text response from AI");
 }
 
 export async function evaluateBids(
@@ -123,12 +134,9 @@ If no suitable bids, return: {"decision": "reject", "selectedAgentId": null, "re
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
+    return safeParseJSON(content.text, "evaluateBids");
   }
-  throw new Error("Failed to parse bid evaluation");
+  throw new Error("evaluateBids: Non-text response from AI");
 }
 
 export async function verifyWork(
@@ -155,12 +163,9 @@ Return JSON only: {"approved": true, "qualityScore": 4.5, "issues": [], "reasoni
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
+    return safeParseJSON(content.text, "verifyWork");
   }
-  throw new Error("Failed to parse work verification");
+  throw new Error("verifyWork: Non-text response from AI");
 }
 
 export async function performWebScraping(requirements: any): Promise<any> {
@@ -180,13 +185,14 @@ Return comprehensive JSON data.`,
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    try {
+      return safeParseJSON(content.text, "performWebScraping");
+    } catch (error) {
+      console.log("[performWebScraping] Returning raw text as fallback");
+      return { data: content.text, raw: true };
     }
-    return { data: content.text, raw: true };
   }
-  throw new Error("Failed to perform web scraping");
+  throw new Error("performWebScraping: Non-text response from AI");
 }
 
 export async function performAnalysis(data: any, analysisType: string): Promise<any> {
@@ -206,11 +212,12 @@ Return structured JSON with insights and recommendations.`,
 
   const content = message.content[0];
   if (content.type === "text") {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    try {
+      return safeParseJSON(content.text, "performAnalysis");
+    } catch (error) {
+      console.log("[performAnalysis] Returning raw text as fallback");
+      return { insights: content.text, raw: true };
     }
-    return { insights: content.text, raw: true };
   }
-  throw new Error("Failed to perform analysis");
+  throw new Error("performAnalysis: Non-text response from AI");
 }

@@ -82,47 +82,54 @@ export class WriterAgent {
       );
 
       for (const job of myJobs) {
-        console.log(`[${this.agentId}] Executing job ${job.id}`);
+        try {
+          console.log(`[${this.agentId}] Executing job ${job.id}`);
 
-        // Use Claude AI to write the report
-        const message = await anthropic.messages.create({
-          model: "claude-sonnet-4-5",
-          max_tokens: 4096,
-          system: `You are a professional writer creating research reports. Based on the provided data, write a well-structured, comprehensive report. Format it professionally with sections, insights, and conclusions.`,
-          messages: [
-            {
-              role: "user",
-              content: `Write a report for: ${job.description}\n\nData/Requirements: ${JSON.stringify(job.requirements, null, 2)}`,
-            },
-          ],
-        });
+          // Use Claude AI to write the report
+          const message = await anthropic.messages.create({
+            model: "claude-sonnet-4-5",
+            max_tokens: 4096,
+            system: `You are a professional writer creating research reports. Based on the provided data, write a well-structured, comprehensive report. Format it professionally with sections, insights, and conclusions.`,
+            messages: [
+              {
+                role: "user",
+                content: `Write a report for: ${job.description}\n\nData/Requirements: ${JSON.stringify(job.requirements, null, 2)}`,
+              },
+            ],
+          });
 
-        const content = message.content[0];
-        let results;
-        if (content.type === "text") {
-          results = {
-            report: content.text,
-            format: "markdown",
-            sections: ["Executive Summary", "Key Findings", "Analysis", "Conclusion"],
-          };
-        } else {
-          throw new Error("Unexpected response type from Claude");
-        }
+          const content = message.content[0];
+          let results;
+          if (content.type === "text") {
+            results = {
+              report: content.text,
+              format: "markdown",
+              sections: ["Executive Summary", "Key Findings", "Analysis", "Conclusion"],
+            };
+          } else {
+            throw new Error("Unexpected response type from Claude");
+          }
 
-        console.log(`[${this.agentId}] Writing completed for job ${job.id}`);
+          console.log(`[${this.agentId}] Writing completed for job ${job.id}`);
 
-        // Submit work
-        const response = await fetch("http://localhost:5000/api/jobs/" + job.id + "/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agentId: this.agentId,
-            results,
-          }),
-        });
+          // Submit work
+          const response = await fetch("http://localhost:5000/api/jobs/" + job.id + "/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              agentId: this.agentId,
+              results,
+            }),
+          });
 
-        if (response.ok) {
-          console.log(`[${this.agentId}] Work submitted for job ${job.id}`);
+          if (response.ok) {
+            console.log(`[${this.agentId}] Work submitted for job ${job.id}`);
+          } else {
+            const error = await response.text();
+            console.error(`[${this.agentId}] Failed to submit work for job ${job.id}:`, error);
+          }
+        } catch (jobError: any) {
+          console.error(`[${this.agentId}] Error executing job ${job.id}:`, jobError.message);
         }
       }
     } catch (error: any) {

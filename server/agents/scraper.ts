@@ -76,25 +76,32 @@ export class ScraperAgent {
       );
 
       for (const job of myJobs) {
-        console.log(`[${this.agentId}] Executing job ${job.id}`);
+        try {
+          console.log(`[${this.agentId}] Executing job ${job.id}`);
 
-        // Use Claude AI to perform web scraping
-        const results = await performWebScraping(job.requirements);
+          // Use Claude AI to perform web scraping
+          const results = await performWebScraping(job.requirements);
 
-        console.log(`[${this.agentId}] Scraping completed for job ${job.id}`);
+          console.log(`[${this.agentId}] Scraping completed for job ${job.id}`);
 
-        // Submit work
-        const response = await fetch("http://localhost:5000/api/jobs/" + job.id + "/submit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            agentId: this.agentId,
-            results,
-          }),
-        });
+          // Submit work
+          const response = await fetch("http://localhost:5000/api/jobs/" + job.id + "/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              agentId: this.agentId,
+              results,
+            }),
+          });
 
-        if (response.ok) {
-          console.log(`[${this.agentId}] Work submitted for job ${job.id}`);
+          if (response.ok) {
+            console.log(`[${this.agentId}] Work submitted for job ${job.id}`);
+          } else {
+            const error = await response.text();
+            console.error(`[${this.agentId}] Failed to submit work for job ${job.id}:`, error);
+          }
+        } catch (jobError: any) {
+          console.error(`[${this.agentId}] Error executing job ${job.id}:`, jobError.message);
         }
       }
     } catch (error: any) {
