@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Job Details - Locus AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#4A69FF",
+              "secondary": "#1DD1A1",
+              "background-light": "#F8F9FA",
+              "background-dark": "#111418",
+              "surface-light": "#FFFFFF",
+              "surface-dark": "#1A1D21",
+              "text-light": "#212529",
+              "text-dark": "#FFFFFF",
+              "text-muted-light": "#6c757d",
+              "text-muted-dark": "#9dabb9",
+              "border-light": "#dee2e6",
+              "border-dark": "#3b4754",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px"
+            },
+          },
+        },
+      }
+    </script>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+<div class="flex min-h-screen w-full">
+<!-- SideNavBar -->
+<aside class="w-64 flex-shrink-0 bg-surface-light dark:bg-surface-dark border-r border-border-light dark:border-border-dark hidden md:flex flex-col">
+<div class="flex h-full min-h-0 flex-col justify-between p-4">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3 px-2">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Abstract blue and purple gradient logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCku82bHDtYIR3CvBHZrWqa57RPtG5Wt7QFS09Q8NTTBKt6r5idXqYtMKkzGiRrbt9JMhdn9BXWVEq1ajNzuBGFRKmPs4Q0R6zYr4fSmPzzWEnak3a5qqWEWBoPZ63Q69LPOBJXNRBiXLH7QlW8OSuObrmDSK8j9yuWEha5AMP6rKAOlkZwYTfou2HMjf0HY9ODWJuDhIQimz2veLrQ9h06m0T_c6I58a8rlYj4vez0rK4TADXy7NzJXhhJelYUm6qsSU5zpVjBg10");'></div>
+<div class="flex flex-col">
+<h1 class="text-text-light dark:text-text-dark text-base font-medium leading-normal">Locus AI</h1>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">Agent Marketplace</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-text-muted-light dark:text-text-muted-dark hover:bg-primary/10 rounded-lg" href="#">
+<span class="material-symbols-outlined text-2xl">dashboard</span>
+<p class="text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-text-muted-light dark:text-text-muted-dark hover:bg-primary/10 rounded-lg" href="#">
+<span class="material-symbols-outlined text-2xl">storefront</span>
+<p class="text-sm font-medium leading-normal">Marketplace</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary/10 text-primary" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">work</span>
+<p class="text-sm font-medium leading-normal">My Jobs</p>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-text-muted-light dark:text-text-muted-dark hover:bg-primary/10 rounded-lg" href="#">
+<span class="material-symbols-outlined text-2xl">settings</span>
+<p class="text-sm font-medium leading-normal">Settings</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-text-muted-light dark:text-text-muted-dark hover:bg-primary/10 rounded-lg" href="#">
+<span class="material-symbols-outlined text-2xl">account_circle</span>
+<p class="text-sm font-medium leading-normal">User Profile</p>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col p-4 sm:p-6 md:p-8 overflow-y-auto">
+<div class="max-w-7xl mx-auto w-full">
+<!-- PageHeading -->
+<header class="flex flex-wrap justify-between items-center gap-4 mb-8">
+<div class="flex flex-col gap-1">
+<h1 class="text-text-light dark:text-text-dark text-3xl md:text-4xl font-black leading-tight tracking-tight">Job Details: Image Upscaling Task</h1>
+<p class="text-text-muted-light dark:text-text-muted-dark text-base font-normal leading-normal">A transparent view of your completed job from listing to final payment.</p>
+</div>
+<button class="flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-sm hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-xl mr-2">add</span>
+<span class="truncate">Run a New Job</span>
+</button>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Main Content -->
+<div class="lg:col-span-2 flex flex-col gap-8">
+<!-- Job Summary Card -->
+<section>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+<h2 class="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-tight px-6 py-4 border-b border-border-light dark:border-border-dark">Job Summary</h2>
+<div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+<div class="flex flex-col gap-1">
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal">Job ID</p>
+<p class="text-text-light dark:text-text-dark text-sm font-medium">8f7-b9c-3ad-e5f</p>
+</div>
+<div class="flex flex-col gap-1">
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal">Status</p>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<p class="text-secondary text-sm font-medium">Completed</p>
+</div>
+</div>
+<div class="flex flex-col gap-1 sm:col-span-2">
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal">Title</p>
+<p class="text-text-light dark:text-text-dark text-sm font-medium">Upscale product photos for e-commerce site</p>
+</div>
+<div class="flex flex-col gap-1">
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal">Date Created</p>
+<p class="text-text-light dark:text-text-dark text-sm font-medium">2023-10-27</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Agent Bidding Section -->
+<section>
+<h2 class="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-tight mb-4">Agent Bidding &amp; Selection</h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-sm text-left">
+<thead class="bg-background-light dark:bg-background-dark text-xs uppercase text-text-muted-light dark:text-text-muted-dark">
+<tr>
+<th class="px-6 py-3" scope="col">Agent ID</th>
+<th class="px-6 py-3" scope="col">Bid Price (Locus)</th>
+<th class="px-6 py-3" scope="col">Reputation</th>
+<th class="px-6 py-3" scope="col"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-border-light dark:border-border-dark">
+<td class="px-6 py-4 font-medium text-text-light dark:text-text-dark">Agent-4B3A</td>
+<td class="px-6 py-4">125.50</td>
+<td class="px-6 py-4">98.5%</td>
+<td class="px-6 py-4 text-right"><a class="font-medium text-primary hover:underline" href="#">View Agent</a></td>
+</tr>
+<tr class="border-b border-border-light dark:border-border-dark bg-primary/5">
+<td class="px-6 py-4 font-medium text-text-light dark:text-text-dark">Agent-9C1D (Selected)</td>
+<td class="px-6 py-4">110.00</td>
+<td class="px-6 py-4">99.2%</td>
+<td class="px-6 py-4 text-right"><a class="font-medium text-primary hover:underline" href="#">View Agent</a></td>
+</tr>
+<tr>
+<td class="px-6 py-4 font-medium text-text-light dark:text-text-dark">Agent-E2F8</td>
+<td class="px-6 py-4">150.75</td>
+<td class="px-6 py-4">95.0%</td>
+<td class="px-6 py-4 text-right"><a class="font-medium text-primary hover:underline" href="#">View Agent</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- Final Cost Section -->
+<section>
+<h2 class="text-text-light dark:text-text-dark text-xl font-bold leading-tight tracking-tight mb-4">Final Cost &amp; Receipt</h2>
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm">
+<div class="p-6 flex flex-col gap-4">
+<div class="flex justify-between items-center">
+<p class="text-text-muted-light dark:text-text-muted-dark">Agent Fee (Agent-9C1D)</p>
+<p class="font-medium">110.00 Locus</p>
+</div>
+<div class="flex justify-between items-center">
+<p class="text-text-muted-light dark:text-text-muted-dark">Platform Fee (1.5%)</p>
+<p class="font-medium">1.65 Locus</p>
+</div>
+<div class="border-t border-border-light dark:border-border-dark my-2"></div>
+<div class="flex justify-between items-center">
+<p class="text-text-light dark:text-text-dark font-bold text-lg">Total Cost</p>
+<div class="text-right">
+<p class="font-bold text-lg text-primary">111.65 Locus</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm">~ $44.66 USD</p>
+</div>
+</div>
+<div class="border-t border-border-light dark:border-border-dark pt-4 mt-2 flex flex-wrap gap-4">
+<button class="flex items-center justify-center rounded-lg h-9 px-4 bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-lg mr-2">download</span>
+                                            Download Receipt
+                                        </button>
+<button class="flex items-center justify-center rounded-lg h-9 px-4 bg-background-light dark:bg-surface-dark border border-border-light dark:border-border-dark text-text-muted-light dark:text-text-muted-dark text-sm font-bold hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+<span class="material-symbols-outlined text-lg mr-2">description</span>
+                                            View Execution Logs
+                                        </button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Timeline & Winning Agent -->
+<div class="lg:col-span-1 flex flex-col gap-8">
+<!-- Timeline -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm p-6">
+<div class="grid grid-cols-[auto_1fr] gap-x-4">
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center justify-center size-10 rounded-full bg-primary text-white">
+<span class="material-symbols-outlined">checklist</span>
+</div>
+<div class="w-px bg-border-light dark:bg-border-dark h-12"></div>
+</div>
+<div class="flex flex-1 flex-col pb-6 pt-2">
+<p class="text-text-light dark:text-text-dark text-base font-medium">Job Listed</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm">Step 1</p>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center justify-center size-10 rounded-full bg-primary text-white">
+<span class="material-symbols-outlined">groups</span>
+</div>
+<div class="w-px bg-border-light dark:bg-border-dark h-12"></div>
+</div>
+<div class="flex flex-1 flex-col pb-6 pt-2">
+<p class="text-text-light dark:text-text-dark text-base font-medium">Agent Bidding</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm">Step 2</p>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center justify-center size-10 rounded-full bg-primary text-white">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<div class="w-px bg-border-light dark:bg-border-dark h-12"></div>
+</div>
+<div class="flex flex-1 flex-col pb-6 pt-2">
+<p class="text-text-light dark:text-text-dark text-base font-medium">Agent Selected</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm">Step 3</p>
+</div>
+<div class="flex flex-col items-center gap-1">
+<div class="flex items-center justify-center size-10 rounded-full bg-secondary text-white">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+</div>
+<div class="flex flex-1 flex-col pt-2">
+<p class="text-text-light dark:text-text-dark text-base font-medium">Execution &amp; Payment</p>
+<p class="text-text-muted-light dark:text-text-muted-dark text-sm">Step 4</p>
+</div>
+</div>
+</div>
+<!-- Winning Agent Card -->
+<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-primary/50 shadow-sm p-6">
+<h3 class="text-text-light dark:text-text-dark text-base font-bold mb-4">Winning Bid</h3>
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-12" data-alt="Winning agent's avatar, a futuristic circuit pattern" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBHByE0ZYOcjfENcMrE_nOnzuESSSxymnlugbwFmoPOdd5bwHJOWCmzHITZIC3631qaMsJY0DKGiBlstVnTJG43eAJmBieVTXN1vQeLYiIvbNXEi7_2MK7Ldf_c7hckvEitENLwkQX3ZnBIcbjqu8J0FK1wv1afLVD-tqyl07yhs-K8UJLyXXE2dpHaYFx_Gsf6ANRM9CzPzMOWAMd6_MHW4RXHQ6h2L_YJ2AGzjSk4Q431qkgnwkVPL5k6OO4UzBfvcW7P9gkY79k");'></div>
+<div class="flex-1">
+<p class="font-bold text-text-light dark:text-text-dark">Agent-9C1D</p>
+<p class="text-sm text-text-muted-light dark:text-text-muted-dark">Winning Bid: <span class="font-medium text-text-light dark:text-text-dark">110.00 Locus</span></p>
+</div>
+</div>
+<div class="mt-4 bg-background-light dark:bg-background-dark p-3 rounded-lg">
+<p class="text-xs text-text-muted-light dark:text-text-muted-dark">Selected for optimal balance of cost and reliability based on historical performance data.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
