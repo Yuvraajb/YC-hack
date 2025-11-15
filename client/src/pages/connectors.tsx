@@ -3,7 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Calendar, CheckCircle, Loader2, Plug, Shield, Info, AlertTriangle } from "lucide-react";
+import { 
+  Mail, Calendar, CheckCircle, Loader2, Plug, Shield, Info, AlertTriangle,
+  Github, Table, Briefcase, CreditCard, Phone, BookOpen, Kanban, Target,
+  Inbox, Zap, Building, Cloud, PlayCircle, Headphones, CheckSquare,
+  FolderOpen, Send, type LucideIcon
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
@@ -11,35 +16,185 @@ interface ConnectorDefinition {
   id: string;
   name: string;
   description: string;
-  icon: typeof Mail;
+  icon: LucideIcon;
+  category: 'productivity' | 'communication' | 'development' | 'business' | 'storage';
   usedByAgents: string[];
   permissions: string[];
+  note?: string;
 }
 
 const CONNECTOR_DEFINITIONS: ConnectorDefinition[] = [
   {
     id: 'google-mail',
     name: 'Gmail',
-    description: 'Read and manage your Gmail messages',
+    description: 'Send, receive, and manage Gmail messages',
     icon: Mail,
+    category: 'communication',
     usedByAgents: ['Personal Assistant AI'],
-    permissions: [
-      'Read emails',
-      'Send emails',
-      'Manage labels'
-    ]
+    permissions: ['Read email metadata', 'Send emails', 'Manage labels'],
+    note: 'Note: Full email reading requires re-authorization in Replit with gmail.readonly scope'
   },
   {
     id: 'google-calendar',
     name: 'Google Calendar',
-    description: 'Access and manage your calendar events',
+    description: 'Manage Google Calendar events and settings',
     icon: Calendar,
+    category: 'productivity',
     usedByAgents: ['Personal Assistant AI'],
-    permissions: [
-      'Read events',
-      'Create events',
-      'Manage calendars'
-    ]
+    permissions: ['Read events', 'Create events', 'Manage calendars']
+  },
+  {
+    id: 'google-sheets',
+    name: 'Google Sheets',
+    description: 'Read and write data to Google Sheets',
+    icon: Table,
+    category: 'productivity',
+    usedByAgents: [],
+    permissions: ['Read spreadsheets', 'Write data', 'Create sheets']
+  },
+  {
+    id: 'stripe',
+    name: 'Stripe',
+    description: 'Process payments and manage subscriptions',
+    icon: CreditCard,
+    category: 'business',
+    usedByAgents: [],
+    permissions: ['Create payments', 'Manage subscriptions', 'View transactions']
+  },
+  {
+    id: 'twilio',
+    name: 'Twilio',
+    description: 'Send SMS messages and make voice calls',
+    icon: Phone,
+    category: 'communication',
+    usedByAgents: [],
+    permissions: ['Send SMS', 'Make calls', 'View messages']
+  },
+  {
+    id: 'notion',
+    name: 'Notion',
+    description: 'Access and manage Notion workspaces and pages',
+    icon: BookOpen,
+    category: 'productivity',
+    usedByAgents: [],
+    permissions: ['Read pages', 'Create content', 'Update databases']
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    description: 'Access repositories, users, and organizations',
+    icon: Github,
+    category: 'development',
+    usedByAgents: [],
+    permissions: ['Read repositories', 'Create issues', 'Manage pull requests']
+  },
+  {
+    id: 'hubspot',
+    name: 'HubSpot',
+    description: 'Access CRM objects, contacts, and deals',
+    icon: Briefcase,
+    category: 'business',
+    usedByAgents: [],
+    permissions: ['Read contacts', 'Manage deals', 'View analytics']
+  },
+  {
+    id: 'jira',
+    name: 'Jira',
+    description: 'Manage Jira work items and issues',
+    icon: Kanban,
+    category: 'development',
+    usedByAgents: [],
+    permissions: ['Read issues', 'Create tasks', 'Update status']
+  },
+  {
+    id: 'linear',
+    name: 'Linear',
+    description: 'Create and manage Linear issues and projects',
+    icon: Target,
+    category: 'development',
+    usedByAgents: [],
+    permissions: ['Read issues', 'Create tasks', 'Manage comments']
+  },
+  {
+    id: 'onedrive',
+    name: 'OneDrive',
+    description: 'Access and manage OneDrive files and folders',
+    icon: Cloud,
+    category: 'storage',
+    usedByAgents: [],
+    permissions: ['Read files', 'Upload files', 'Manage folders']
+  },
+  {
+    id: 'outlook',
+    name: 'Outlook',
+    description: 'Send/receive emails and manage Outlook calendar',
+    icon: Inbox,
+    category: 'communication',
+    usedByAgents: [],
+    permissions: ['Read emails', 'Send emails', 'Manage calendar']
+  },
+  {
+    id: 'resend',
+    name: 'Resend',
+    description: 'Send transactional emails',
+    icon: Zap,
+    category: 'communication',
+    usedByAgents: [],
+    permissions: ['Send emails', 'View analytics']
+  },
+  {
+    id: 'sendgrid',
+    name: 'SendGrid',
+    description: 'Send transactional emails',
+    icon: Send,
+    category: 'communication',
+    usedByAgents: [],
+    permissions: ['Send emails', 'Manage templates', 'View stats']
+  },
+  {
+    id: 'salesforce',
+    name: 'Salesforce',
+    description: 'Access CRM data and perform operations',
+    icon: Building,
+    category: 'business',
+    usedByAgents: [],
+    permissions: ['Read records', 'Create leads', 'Update opportunities']
+  },
+  {
+    id: 'sharepoint',
+    name: 'SharePoint',
+    description: 'Read, write, and manage SharePoint sites and documents',
+    icon: FolderOpen,
+    category: 'storage',
+    usedByAgents: [],
+    permissions: ['Read documents', 'Upload files', 'Manage sites']
+  },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    description: 'Upload, manage videos, channels, and analytics',
+    icon: PlayCircle,
+    category: 'communication',
+    usedByAgents: [],
+    permissions: ['Upload videos', 'Manage channels', 'View analytics']
+  },
+  {
+    id: 'zendesk',
+    name: 'Zendesk',
+    description: 'Read and write access to the Ticket API',
+    icon: Headphones,
+    category: 'business',
+    usedByAgents: [],
+    permissions: ['Read tickets', 'Create tickets', 'Update status']
+  },
+  {
+    id: 'clickup',
+    name: 'ClickUp',
+    description: 'Work with tasks, lists, and projects',
+    icon: CheckSquare,
+    category: 'productivity',
+    usedByAgents: [],
+    permissions: ['Read tasks', 'Create tasks', 'Update projects']
   }
 ];
 
@@ -92,6 +247,14 @@ export default function Connectors() {
           </AlertDescription>
         </Alert>
 
+        <Alert className="mb-6 border-blue-500/20 bg-blue-500/5">
+          <Info className="h-4 w-4 text-blue-500" />
+          <AlertDescription>
+            <strong className="text-foreground">Connection status:</strong> Gmail and Google Calendar statuses are verified in real-time. 
+            Other connectors show status based on Replit's connector naming (status may vary if connector slugs differ).
+          </AlertDescription>
+        </Alert>
+
         {isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground mb-6">
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -132,22 +295,22 @@ export default function Connectors() {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <CardTitle className="text-xl">{connector.name}</CardTitle>
+                          <CardTitle className="text-xl" data-testid={`text-connector-name-${connector.id}`}>{connector.name}</CardTitle>
                           {!isLoading && isConnected && (
-                            <Badge variant="default" className="gap-1">
+                            <Badge variant="default" className="gap-1" data-testid={`badge-status-connected-${connector.id}`}>
                               <CheckCircle className="w-3 h-3" />
                               Connected
                             </Badge>
                           )}
                         </div>
-                        <CardDescription>{connector.description}</CardDescription>
+                        <CardDescription data-testid={`text-description-${connector.id}`}>{connector.description}</CardDescription>
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 items-end">
                       {isLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" data-testid={`loader-status-${connector.id}`} />
                       ) : isConnected ? (
-                        <Badge variant="default" className="gap-1">
+                        <Badge variant="default" className="gap-1" data-testid={`badge-status-active-${connector.id}`}>
                           <CheckCircle className="w-3 h-3" />
                           Active
                         </Badge>
@@ -166,11 +329,21 @@ export default function Connectors() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {connector.note && (
+                      <Alert className="border-yellow-500/20 bg-yellow-500/5" data-testid={`alert-note-${connector.id}`}>
+                        <Info className="h-4 w-4 text-yellow-500" />
+                        <AlertDescription className="text-sm">{connector.note}</AlertDescription>
+                      </Alert>
+                    )}
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Category</h4>
+                      <Badge variant="outline" className="capitalize" data-testid={`badge-category-${connector.id}`}>{connector.category}</Badge>
+                    </div>
                     <div>
                       <h4 className="text-sm font-medium mb-2">Permissions</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connector.permissions.map((permission) => (
-                          <Badge key={permission} variant="outline">
+                        {connector.permissions.map((permission, index) => (
+                          <Badge key={permission} variant="outline" data-testid={`badge-permission-${connector.id}-${index}`}>
                             {permission}
                           </Badge>
                         ))}
@@ -181,8 +354,8 @@ export default function Connectors() {
                       <div>
                         <h4 className="text-sm font-medium mb-2">Used by Agents</h4>
                         <div className="flex flex-wrap gap-2">
-                          {connector.usedByAgents.map((agent) => (
-                            <Badge key={agent} variant="secondary">
+                          {connector.usedByAgents.map((agent, index) => (
+                            <Badge key={agent} variant="secondary" data-testid={`badge-agent-${connector.id}-${index}`}>
                               {agent}
                             </Badge>
                           ))}

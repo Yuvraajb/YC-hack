@@ -407,54 +407,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : null;
 
       if (!xReplitToken || !hostname) {
-        return res.json({
-          'google-mail': false,
-          'google-calendar': false
-        });
+        return res.json({});
       }
 
-      // Check Gmail connection
-      let gmailConnected = false;
-      try {
-        const gmailResponse = await fetch(
-          'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-mail',
-          {
-            headers: {
-              'Accept': 'application/json',
-              'X_REPLIT_TOKEN': xReplitToken
+      // Helper function to check connector status
+      const checkConnector = async (connectorName: string): Promise<boolean> => {
+        try {
+          const response = await fetch(
+            `https://${hostname}/api/v2/connection?include_secrets=true&connector_names=${connectorName}`,
+            {
+              headers: {
+                'Accept': 'application/json',
+                'X_REPLIT_TOKEN': xReplitToken
+              }
             }
-          }
-        );
-        const gmailData = await gmailResponse.json();
-        const gmailConnection = gmailData.items?.[0];
-        gmailConnected = !!(gmailConnection?.settings?.access_token || gmailConnection?.settings?.oauth?.credentials?.access_token);
-      } catch (error) {
-        console.error('Error checking Gmail status:', error);
-      }
+          );
+          const data = await response.json();
+          const connection = data.items?.[0];
+          return !!(connection?.settings?.access_token || connection?.settings?.oauth?.credentials?.access_token);
+        } catch (error) {
+          console.error(`Error checking ${connectorName} status:`, error);
+          return false;
+        }
+      };
 
-      // Check Calendar connection
-      let calendarConnected = false;
-      try {
-        const calendarResponse = await fetch(
-          'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-calendar',
-          {
-            headers: {
-              'Accept': 'application/json',
-              'X_REPLIT_TOKEN': xReplitToken
-            }
-          }
-        );
-        const calendarData = await calendarResponse.json();
-        const calendarConnection = calendarData.items?.[0];
-        calendarConnected = !!(calendarConnection?.settings?.access_token || calendarConnection?.settings?.oauth?.credentials?.access_token);
-      } catch (error) {
-        console.error('Error checking Calendar status:', error);
-      }
+      // Map frontend connector IDs to Replit connector slugs
+      const connectorMapping: Record<string, string> = {
+        'google-mail': 'google-mail',
+        'google-calendar': 'google-calendar',
+        'google-sheets': 'google-sheet',  // Note: Replit uses singular "sheet"
+        'github': 'github',
+        'notion': 'notion',
+        'hubspot': 'hubspot',
+        'jira': 'jira',
+        'linear': 'linear',
+        'twilio': 'twilio',
+        'stripe': 'stripe',
+        'sendgrid': 'sendgrid',
+        'resend': 'resend',
+        'salesforce': 'salesforce',
+        'zendesk': 'zendesk',
+        'clickup': 'clickup',
+        'onedrive': 'onedrive',
+        'outlook': 'outlook',
+        'sharepoint': 'sharepoint',
+        'youtube': 'youtube'
+      };
 
-      res.json({
-        'google-mail': gmailConnected,
-        'google-calendar': calendarConnected
+      const statuses = await Promise.all(
+        Object.entries(connectorMapping).map(async ([frontendId, replitSlug]) => ({
+          frontendId,
+          connected: await checkConnector(replitSlug)
+        }))
+      );
+
+      const statusMap: Record<string, boolean> = {};
+      statuses.forEach(({ frontendId, connected }) => {
+        statusMap[frontendId] = connected;
       });
+
+      res.json(statusMap);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
