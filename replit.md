@@ -74,7 +74,7 @@ A polished full-stack web application where users submit tasks through a simple 
     - Backend maintains explicit mapping between frontend IDs and Replit connector slugs
     - **Gmail Scope Issue**: Current Gmail connector has limited scopes - requires re-authorization in Replit for full email reading (gmail.readonly scope)
     - UI note clarifies Gmail/Calendar statuses are verified real-time, other connectors show estimated status
-    - **Connect Buttons**: Redirect to https://replit.com/~/connections in new tab for easy authorization
+    - **Connect Buttons**: Redirect to https://replit.com/integrations in new tab for easy authorization
   - **Tool-Based Agent Bidding (2025-11-15)**:
     - Implemented `analyzePromptForTools()`: detects required tools from user prompts using regex patterns
     - **Detection patterns**:

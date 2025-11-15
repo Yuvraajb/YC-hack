@@ -62,7 +62,7 @@ If you're running this on Replit, integrations work automatically:
 
 1. **Import the project** to your Replit account
 2. **Click "Connect via Replit"** buttons in the `/connectors` page
-3. You'll be redirected to `https://replit.com/~/connections`
+3. You'll be redirected to `https://replit.com/integrations`
 4. **Authorize the services** you want to use (Gmail, Calendar, etc.)
 5. Once authorized, all agents in the marketplace automatically get access
 
@@ -73,7 +73,7 @@ When running on your local PC, you have two options:
 **Option A: Use Replit for Connectors Only**
 1. Create a Replit account at https://replit.com
 2. Import this repository to Replit
-3. Connect your services at https://replit.com/~/connections
+3. Connect your services at https://replit.com/integrations
 4. The app will fetch tokens from Replit's API (requires running on Replit)
 
 **Option B: Set Up OAuth Manually** (Advanced)
