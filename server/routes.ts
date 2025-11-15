@@ -259,6 +259,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/jobs/:id/logs", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const logs = await storage.getLogsByJobId(id);
+      res.json(logs);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/jobs", async (req, res) => {
     try {
       const jobs = await storage.getAllJobs();
