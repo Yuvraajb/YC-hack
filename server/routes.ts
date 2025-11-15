@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertJobSchema, insertBidSchema, insertPaymentSchema, insertLogSchema, insertMarketplaceAgentSchema, insertDeveloperSchema } from "@shared/schema";
 import { agents, generateBid, calculateBidScore, getAgentById } from "./agents";
+import { executeAgentTask } from "./agent-sdk";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
 
@@ -159,32 +160,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       await storage.updateJob(id, { status: "executing" });
-      await addLog(id, "info", "Initiating execution with selected agent...");
-      await addLog(id, "info", "Analyzing requirements and constraints...");
       
-      const message = await anthropic.messages.create({
-        model: "claude-sonnet-4-5",
-        max_tokens: 2000,
-        system: agent.systemPrompt,
-        messages: [
-          {
-            role: "user",
-            content: `Task: ${job.prompt}\n\nProvide a comprehensive solution for this task. Include implementation details, approach, and any relevant considerations.`,
-          },
-        ],
+      // Execute with Claude Agent SDK (supports web browsing and image generation)
+      const result = await executeAgentTask({
+        storage,
+        jobId: id,
+        prompt: job.prompt,
+        systemPrompt: agent.systemPrompt,
+        enabledTools: agent.enabledTools,
+        maxSteps: 50
       });
       
-      const textContent = message.content.find(block => block.type === 'text');
-      const output = textContent && textContent.type === 'text' ? textContent.text : '';
-      
-      if (!output) {
-        throw new Error("No text response received from AI agent");
+      if (!result.success) {
+        throw new Error(result.error || "Agent execution failed");
       }
       
-      await addLog(id, "info", "Generating project structure and dependencies...");
-      await addLog(id, "info", "Implementing core components and layouts...");
-      await addLog(id, "info", "Running validation checks...");
-      await addLog(id, "success", "Execution completed successfully! Output generated.");
+      const output = result.result || "Task completed successfully";
       
       await storage.updateJob(id, { 
         status: "completed",

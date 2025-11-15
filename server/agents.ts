@@ -7,6 +7,7 @@ export interface Agent {
     baseDuration: number; // in minutes
     confidenceRange: [number, number];
   };
+  enabledTools: string[];
 }
 
 export const agents: Agent[] = [
@@ -22,6 +23,7 @@ Keep responses concise and focused on core requirements.`,
       baseDuration: 2,
       confidenceRange: [80, 88],
     },
+    enabledTools: ["WebSearch"],
   },
   {
     id: "high-quality",
@@ -35,6 +37,7 @@ You take the time needed to ensure excellence in every aspect of the deliverable
       baseDuration: 8,
       confidenceRange: [95, 99],
     },
+    enabledTools: ["WebSearch", "generate_image", "Bash"],
   },
   {
     id: "balanced",
@@ -48,6 +51,7 @@ You optimize for practical value and reliable results.`,
       baseDuration: 5,
       confidenceRange: [90, 94],
     },
+    enabledTools: ["WebSearch", "generate_image"],
   },
 ];
 

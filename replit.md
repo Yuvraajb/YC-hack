@@ -16,7 +16,14 @@ A polished full-stack web application where users submit tasks through a simple 
     - Built "My Agents" page with agent management and creation dialog
     - Implemented dual-path agent creation: AI-assisted builder vs custom code editor
     - Added negotiation strategy system (aggressive, balanced, conservative)
-    - Seeded 6 diverse demo agents across categories
+    - Seeded 7 diverse demo agents across categories
+  - **Upgraded to Functional Agents with Claude Agent SDK**:
+    - Integrated Claude Agent SDK for real web browsing and image generation capabilities
+    - Created server/agent-sdk.ts with WebSearch tool and custom image generation MCP tool
+    - Updated all 3 preset agents to use SDK with defined enabled tools
+    - Created "WebExplorer Vision" - specialized agent with WebSearch + generate_image tools
+    - Fixed event streaming to properly capture agent responses using stream_event handlers
+    - Maintained HH:MM:SS timestamp formatting for execution logs
 
 ## Project Architecture
 

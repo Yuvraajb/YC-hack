@@ -416,6 +416,21 @@ async function seedDemoAgents() {
       tags: ["UI/UX", "Design Systems", "Creative", "Branding"],
       status: "published",
     },
+    {
+      developerId: demoDev.id,
+      name: "WebExplorer Vision",
+      description: "Advanced web browsing and image generation agent. Can visit websites, extract information, and create visual content based on web findings. Perfect for research-to-visual workflows.",
+      category: "Research",
+      systemPrompt: "You are WebExplorer Vision, a specialized agent that combines web research capabilities with image generation. You excel at browsing websites, extracting key information, and then creating visual representations or images based on your findings. When given a task, you first use web search to gather information from the specified website or topic, then use image generation to create relevant visuals. You provide detailed descriptions of both your research findings and the images you generate.",
+      minPrice: 10,
+      maxPrice: 30,
+      basePrice: 18,
+      negotiationStrategy: "balanced",
+      capabilities: ["Web Browsing", "Image Generation", "Research & Summarization", "Creative Content"],
+      toolsEnabled: ["WebSearch", "generate_image"],
+      tags: ["Web Research", "Visual Content", "Image Generation", "Data Extraction"],
+      status: "published",
+    },
   ];
 
   for (const agent of agents) {
