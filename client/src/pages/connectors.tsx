@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Calendar, CheckCircle, AlertCircle, Loader2, Plug } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Mail, Calendar, CheckCircle, AlertCircle, Loader2, Plug, Shield, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Connector {
@@ -69,53 +70,12 @@ export default function Connectors() {
     }
   };
 
-  const handleConnect = async (connectorId: string) => {
-    try {
-      const response = await fetch(`/api/connectors/${connectorId}/authorize`);
-      const data = await response.json();
-      
-      if (data.authUrl) {
-        // Open OAuth flow in popup
-        const width = 600;
-        const height = 700;
-        const left = window.screenX + (window.outerWidth - width) / 2;
-        const top = window.screenY + (window.outerHeight - height) / 2;
-        
-        const popup = window.open(
-          data.authUrl,
-          'oauth-popup',
-          `width=${width},height=${height},left=${left},top=${top}`
-        );
-
-        // Poll for completion
-        const pollInterval = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(pollInterval);
-            checkConnectorStatus();
-            toast({
-              title: "Authorization Complete",
-              description: "Please check if the connection was successful.",
-            });
-          }
-        }, 1000);
-      } else if (data.instructions) {
-        // Show instructions for manual authorization
-        toast({
-          title: "Authorization Required",
-          description: data.message,
-          duration: 10000,
-        });
-        
-        // For now, show a helpful message
-        alert(`To connect ${connectorId}:\n\n${data.instructions.join('\n')}\n\nNote: We're working on making this process fully automated within the app.`);
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to initiate authorization",
-        variant: "destructive",
-      });
-    }
+  const openReplitConnectors = () => {
+    toast({
+      title: "Opening Replit Connectors",
+      description: "Look for the Connectors panel in your Replit workspace",
+      duration: 5000,
+    });
   };
 
   return (
@@ -129,9 +89,18 @@ export default function Connectors() {
             <h1 className="text-3xl font-bold">Connectors</h1>
           </div>
           <p className="text-muted-foreground">
-            Connect your accounts to enable AI agents to access your data and perform actions on your behalf
+            Connect your accounts once - all marketplace agents can use them
           </p>
         </div>
+
+        <Alert className="mb-6 border-primary/20 bg-primary/5">
+          <Shield className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            <strong className="text-foreground">Authorize once, access everywhere.</strong> When you connect via Replit, 
+            all agents in the marketplace automatically get access to your authorized services. Your tokens are managed 
+            securely by Replit and auto-refresh when needed.
+          </AlertDescription>
+        </Alert>
 
         {isChecking && (
           <div className="flex items-center gap-2 text-muted-foreground mb-6">
@@ -174,14 +143,24 @@ export default function Connectors() {
                       </div>
                     </div>
                     {!isChecking && (
-                      <Button
-                        onClick={() => handleConnect(connector.id)}
-                        disabled={isConnected}
-                        variant={isConnected ? "secondary" : "default"}
-                        data-testid={`button-connect-${connector.id}`}
-                      >
-                        {isConnected ? 'Connected' : 'Connect'}
-                      </Button>
+                      <div className="flex flex-col gap-2 items-end">
+                        {isConnected && (
+                          <Badge variant="default" className="gap-1">
+                            <CheckCircle className="w-3 h-3" />
+                            Active
+                          </Badge>
+                        )}
+                        {!isConnected && (
+                          <Button
+                            onClick={openReplitConnectors}
+                            variant="default"
+                            size="sm"
+                            data-testid={`button-connect-${connector.id}`}
+                          >
+                            Connect via Replit
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </div>
                 </CardHeader>
@@ -217,15 +196,30 @@ export default function Connectors() {
           })}
         </div>
 
-        <div className="mt-8 p-4 rounded-lg bg-muted">
-          <h3 className="font-medium mb-2">How it works</h3>
-          <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• Connect your accounts once - all agents can access them</li>
-            <li>• OAuth tokens are managed securely by Replit</li>
-            <li>• Tokens auto-refresh - you never need to reconnect</li>
-            <li>• You can disconnect anytime to revoke access</li>
-          </ul>
-        </div>
+        <Alert className="mt-8">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <h3 className="font-medium mb-2">How Connectors Work</h3>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li className="flex gap-2">
+                <span>1.</span>
+                <span>Click "Connect via Replit" and authorize in the Replit Connectors panel (one-time setup)</span>
+              </li>
+              <li className="flex gap-2">
+                <span>2.</span>
+                <span>All agents in the marketplace automatically inherit your authorization</span>
+              </li>
+              <li className="flex gap-2">
+                <span>3.</span>
+                <span>Tokens are managed and auto-refreshed by Replit - no maintenance needed</span>
+              </li>
+              <li className="flex gap-2">
+                <span>4.</span>
+                <span>When an agent runs, it uses your authorized credentials to access your data</span>
+              </li>
+            </ul>
+          </AlertDescription>
+        </Alert>
       </div>
     </div>
   );
