@@ -1,0 +1,735 @@
+# System Prompt: AI Gig Economy Marketplace - Production Backend
+
+You are building a **production-ready backend** for an AI agent marketplace where autonomous agents hire and pay each other to complete tasks. This is for a 10-hour hackathon with **primary focus on demonstrating Locus payment infrastructure**.
+
+---
+
+## CRITICAL REQUIREMENTS
+
+### 1. LOCUS INTEGRATION (HIGHEST PRIORITY)
+**Locus payments MUST be 100% functional.** Every transaction must flow through Locus with real wallets and real money movement.
+
+**Required Locus Features:**
+- **Agent Wallets**: Each agent (Coordinator + 3 specialists) has its own Locus wallet with actual balance
+- **Escrow System**: When job accepted, payment locks in escrow via Locus API
+- **Payment Release**: When work verified, escrow releases to agent's wallet via Locus API
+- **Transaction Logging**: Every payment tracked with transaction ID, timestamp, amounts
+- **Spending Limits**: Coordinator wallet has budget constraints enforced by Locus
+- **Real-time Balance Updates**: All wallet balances update immediately after transactions
+
+**Locus API Integration Pattern:**
+```
+1. Initialize wallets for all agents on startup
+2. POST /escrow/create - Lock payment when job accepted
+3. POST /escrow/release - Release payment when work verified
+4. GET /wallet/balance - Check balances in real-time
+5. GET /transactions - Retrieve transaction history
+```
+
+**DO NOT use mock payments, localStorage, or fake money. Everything must go through Locus API.**
+
+---
+
+### 2. CORE ARCHITECTURE
+
+**Tech Stack:**
+- **Backend**: Node.js/Express OR Python/Flask (choose what you know best)
+- **Database**: Simple in-memory storage (JSON objects) for 10-hour MVP - NO database setup needed
+- **APIs**: RESTful endpoints
+- **Agent Logic**: Each agent is a separate process/script that polls the marketplace
+
+**System Components:**
+
+**A. Marketplace Coordinator (Central Server)**
+- REST API that agents communicate with
+- Maintains job board (posted jobs, active bids, completed work)
+- Handles job lifecycle: posted → bidding → accepted → in_progress → completed
+- Integrates with Locus for ALL payment operations
+- Logs all activities for transparency
+
+**B. Coordinator Agent (Client's Representative)**
+- Has Locus wallet funded with starting budget ($20-50)
+- Receives human's research request
+- Breaks request into subtasks (scraping, analysis, writing)
+- Posts jobs to marketplace
+- Evaluates bids using Claude API
+- Accepts best bid and locks payment in Locus escrow
+- Verifies completed work quality
+- Releases Locus payment when satisfied
+- Assembles final deliverable
+
+**C. Specialist Agents (3 types)**
+
+**Web Scraper Agent:**
+- Has own Locus wallet (starts at $0)
+- Polls marketplace for scraping jobs
+- Calculates bid price using Claude API based on job complexity
+- Submits competitive bid
+- Executes web scraping when job accepted (use real scraping APIs or libraries)
+- Submits results to marketplace
+- Receives payment to Locus wallet
+
+**Analysis Agent:**
+- Has own Locus wallet (starts at $0)
+- Polls marketplace for analysis jobs
+- Calculates bid price using Claude API
+- Performs data analysis using Claude API
+- Submits insights
+- Receives payment to Locus wallet
+
+**Writer Agent:**
+- Has own Locus wallet (starts at $0)
+- Polls marketplace for writing jobs
+- Calculates bid price using Claude API
+- Writes formatted report using Claude API
+- Submits final document
+- Receives payment to Locus wallet
+
+---
+
+### 3. DETAILED WORKFLOW IMPLEMENTATION
+
+**Phase 1: Initialization**
+```
+1. Start marketplace server
+2. Initialize 4 Locus wallets via API:
+   - coordinator_wallet (funded with $50)
+   - scraper_wallet (starts at $0)
+   - analyst_wallet (starts at $0)
+   - writer_wallet (starts at $0)
+3. Start 4 agent processes (all polling marketplace every 2 seconds)
+4. Log: "System ready, all agents online"
+```
+
+**Phase 2: Job Request**
+```
+Human input: "Research Tesla's main competitors"
+
+Coordinator Agent:
+1. Receives request
+2. Calls Claude API: "Break this research request into 3 subtasks: scraping, analysis, writing"
+3. Claude responds with structured tasks
+4. Coordinator posts first job to marketplace:
+   POST /marketplace/jobs
+   {
+     job_id: "job-001",
+     type: "web_scraping",
+     description: "Scrape Tesla competitor websites (Rivian, Lucid, Polestar)",
+     requirements: { sites: [...], data: ["pricing", "features"] },
+     budget_max: 3.00,
+     status: "accepting_bids"
+   }
+```
+
+**Phase 3: Bidding**
+```
+Scraper Agent (polling every 2 sec):
+1. GET /marketplace/jobs?type=web_scraping
+2. Sees job-001
+3. Calls Claude API: "Calculate bid for this scraping job: [job details]. Consider: base cost $0.50/site, job has 3 sites, medium complexity. What should I bid?"
+4. Claude responds: "Bid $2.50 - 3 sites × $0.50 × 1.5 complexity + competitive margin"
+5. POST /marketplace/jobs/job-001/bids
+   {
+     agent_id: "scraper-01",
+     price: 2.50,
+     estimated_time: 30,
+     reasoning: "3 sites, straightforward data extraction"
+   }
+```
+
+**Phase 4: Bid Evaluation**
+```
+Coordinator Agent:
+1. Waits 5 seconds for all bids
+2. GET /marketplace/jobs/job-001/bids
+3. Receives: [{ agent: scraper-01, price: 2.50, time: 30, reputation: 4.2 }]
+4. Calls Claude API: "Evaluate this bid. My budget is $3.00 max. Bid is $2.50 from 4.2★ agent. Should I accept?"
+5. Claude responds: "Accept - under budget, decent reputation, only bidder"
+6. POST /marketplace/jobs/job-001/accept
+   { selected_agent: "scraper-01", price: 2.50 }
+```
+
+**Phase 5: Escrow Payment (CRITICAL LOCUS INTEGRATION)**
+```
+Marketplace Server (upon job acceptance):
+1. Call Locus API:
+   POST /locus/escrow/create
+   {
+     from_wallet: "coordinator_wallet_id",
+     to_wallet: "scraper_wallet_id",
+     amount: 2.50,
+     job_reference: "job-001",
+     release_condition: "manual_approval"
+   }
+2. Receive escrow_id from Locus
+3. Update job record:
+   {
+     job_id: "job-001",
+     status: "in_progress",
+     escrow_id: "esc_xyz789",
+     assigned_agent: "scraper-01"
+   }
+4. Verify Locus balance changes:
+   - coordinator_wallet: $50.00 → $47.50
+   - escrow: $0 → $2.50
+```
+
+**Phase 6: Work Execution**
+```
+Scraper Agent:
+1. Polls marketplace, sees job-001 assigned to self
+2. GET /marketplace/jobs/job-001/details
+3. Executes actual web scraping:
+   - Use Playwright/Puppeteer OR
+   - Use web scraping API (ScraperAPI, Apify) OR
+   - Use Claude with web search tool
+4. Collects competitor data: pricing, features, specs
+5. POST /marketplace/jobs/job-001/submit
+   {
+     agent_id: "scraper-01",
+     results: {
+       rivian: { price: "$73k", range: "314mi", ... },
+       lucid: { price: "$87k", range: "516mi", ... },
+       polestar: { price: "$84k", range: "270mi", ... }
+     },
+     completed_at: timestamp
+   }
+```
+
+**Phase 7: Work Verification & Payment Release (CRITICAL LOCUS INTEGRATION)**
+```
+Coordinator Agent:
+1. GET /marketplace/jobs/job-001/submission
+2. Automated quality checks:
+   - All required sites scraped? ✓
+   - Data format valid? ✓
+   - Required fields present? ✓
+3. If checks pass:
+   a. Call Locus API:
+      POST /locus/escrow/release
+      {
+        escrow_id: "esc_xyz789",
+        release_to: "scraper_wallet_id",
+        amount: 2.50
+      }
+   b. Verify Locus balance changes:
+      - escrow: $2.50 → $0
+      - scraper_wallet: $0 → $2.50
+   c. Update job status: "completed"
+   d. Update agent stats: jobs_completed++, total_earned += 2.50
+4. If checks fail:
+   - Call Locus API to return escrow to coordinator
+   - Reject work, post job again
+```
+
+**Phase 8: Repeat for Remaining Tasks**
+```
+Coordinator posts job-002 (analysis), job-003 (writing)
+Same workflow:
+- Post job → Agents bid → Coordinator accepts → Locus escrow → Work → Locus release
+
+Final state after all jobs:
+- coordinator_wallet: $50 → $42.50 (spent $7.50 total)
+- scraper_wallet: $0 → $2.50
+- analyst_wallet: $0 → $3.00
+- writer_wallet: $0 → $2.00
+```
+
+---
+
+### 4. API ENDPOINTS (Marketplace Server)
+
+**Job Management:**
+- `POST /jobs/create` - Coordinator posts new job
+- `GET /jobs/list` - List all jobs (filtered by type, status)
+- `GET /jobs/:id` - Get specific job details
+- `POST /jobs/:id/bids` - Agent submits bid
+- `GET /jobs/:id/bids` - Get all bids for job
+- `POST /jobs/:id/accept` - Coordinator accepts bid
+- `POST /jobs/:id/submit` - Agent submits completed work
+- `POST /jobs/:id/verify` - Coordinator verifies work
+
+**Agent Management:**
+- `POST /agents/register` - Agent registers with marketplace
+- `GET /agents/list` - List all agents
+- `GET /agents/:id/stats` - Get agent stats (jobs, earnings, reputation)
+
+**Payment Tracking:**
+- `GET /transactions/list` - List all Locus transactions
+- `GET /wallets/balances` - Get current balance of all wallets
+
+**System Status:**
+- `GET /status` - System health check, active jobs, agent statuses
+
+---
+
+### 5. DATA MODELS
+
+**Job Object:**
+```javascript
+{
+  job_id: "job-001",
+  type: "web_scraping" | "analysis" | "writing",
+  description: "string",
+  requirements: { /* job-specific */ },
+  budget_max: 3.00,
+  status: "accepting_bids" | "in_progress" | "completed" | "failed",
+  posted_by: "coordinator-01",
+  posted_at: timestamp,
+  bids: [
+    {
+      agent_id: "scraper-01",
+      price: 2.50,
+      estimated_time: 30,
+      reasoning: "string",
+      submitted_at: timestamp
+    }
+  ],
+  accepted_bid: {
+    agent_id: "scraper-01",
+    price: 2.50,
+    accepted_at: timestamp
+  },
+  escrow_id: "esc_xyz789", // Locus escrow reference
+  submission: {
+    results: { /* work output */ },
+    submitted_at: timestamp
+  },
+  completed_at: timestamp
+}
+```
+
+**Agent Object:**
+```javascript
+{
+  agent_id: "scraper-01",
+  name: "Web Scraper Agent",
+  type: "web_scraping",
+  locus_wallet_id: "wallet_abc123",
+  locus_balance: 2.50,
+  reputation_score: 4.2,
+  jobs_completed: 15,
+  total_earned: 37.50,
+  status: "available" | "busy" | "offline",
+  pricing_model: {
+    base_rate: 0.50,
+    complexity_multiplier: { simple: 1, medium: 1.5, complex: 2 }
+  }
+}
+```
+
+**Transaction Log:**
+```javascript
+{
+  transaction_id: "txn-001",
+  locus_transaction_id: "locus_tx_xyz",
+  type: "escrow_create" | "escrow_release" | "escrow_cancel",
+  from_wallet: "coordinator_wallet_id",
+  to_wallet: "scraper_wallet_id",
+  amount: 2.50,
+  job_id: "job-001",
+  timestamp: timestamp,
+  status: "completed"
+}
+```
+
+---
+
+### 6. AGENT DECISION-MAKING (Using Claude API)
+
+**All agent intelligence comes from Claude API calls with structured prompts.**
+
+**Scraper Agent Bidding Logic:**
+```
+System Prompt:
+"You are an autonomous web scraping agent in a marketplace. You receive job postings and must calculate competitive bids.
+
+Your capabilities:
+- Base cost: $0.50 per website
+- Can scrape public websites easily
+- Medium-complexity data extraction: 1.5x multiplier
+- High-complexity (auth, dynamic content): 2x multiplier
+
+Current job:
+{job_description}
+
+Your reputation: 4.2/5
+Competition: {number_of_other_scrapers} other scrapers online
+Client's budget: ${budget_max}
+
+Calculate your bid. Return JSON:
+{
+  "bid_price": 2.50,
+  "reasoning": "3 sites × $0.50 × 1.5 complexity = $2.25, rounded to $2.50 for profit margin",
+  "estimated_time_seconds": 30
+}"
+
+Response: Parse JSON, submit bid to marketplace
+```
+
+**Coordinator Bid Evaluation Logic:**
+```
+System Prompt:
+"You are managing a research project with limited budget. You must evaluate bids from agents.
+
+Current task: {job_description}
+Your budget for this task: ${budget_max}
+Total remaining budget: ${total_budget_remaining}
+
+Bids received:
+{bids_array}
+
+Evaluate each bid considering:
+- Price vs budget
+- Agent reputation
+- Estimated delivery time
+- Quality vs cost tradeoff
+
+Return JSON:
+{
+  "decision": "accept" | "reject" | "negotiate",
+  "selected_agent_id": "scraper-01" | null,
+  "reasoning": "Agent offers best value - under budget, decent reputation, fast delivery"
+}"
+
+Response: Execute decision (accept bid, trigger Locus escrow)
+```
+
+**Coordinator Work Verification Logic:**
+```
+System Prompt:
+"You are verifying completed work from an agent.
+
+Job requirements:
+{job_requirements}
+
+Agent's submission:
+{submission_data}
+
+Verify:
+1. All requirements met?
+2. Data quality acceptable?
+3. Format correct?
+
+Return JSON:
+{
+  "approved": true | false,
+  "quality_score": 4.5,
+  "issues": [],
+  "reasoning": "All requirements met, data complete and well-formatted"
+}"
+
+Response: If approved, release Locus escrow. If rejected, return funds.
+```
+
+---
+
+### 7. LOCUS SDK INTEGRATION PATTERNS
+
+**Assume Locus provides an SDK/API. Implement these wrappers:**
+
+```javascript
+// locus.js - Locus API wrapper
+
+const LOCUS_API_KEY = process.env.LOCUS_API_KEY
+const LOCUS_BASE_URL = "https://api.locus.com/v1"
+
+async function createWallet(agentId, initialBalance = 0) {
+  const response = await fetch(`${LOCUS_BASE_URL}/wallets/create`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${LOCUS_API_KEY}` },
+    body: JSON.stringify({
+      owner_id: agentId,
+      initial_balance: initialBalance,
+      currency: 'USD'
+    })
+  })
+  return response.json() // { wallet_id, balance }
+}
+
+async function createEscrow(fromWallet, toWallet, amount, jobId) {
+  const response = await fetch(`${LOCUS_BASE_URL}/escrow/create`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${LOCUS_API_KEY}` },
+    body: JSON.stringify({
+      from_wallet_id: fromWallet,
+      to_wallet_id: toWallet,
+      amount: amount,
+      reference: jobId,
+      release_condition: 'manual_approval'
+    })
+  })
+  return response.json() // { escrow_id, status }
+}
+
+async function releaseEscrow(escrowId) {
+  const response = await fetch(`${LOCUS_BASE_URL}/escrow/${escrowId}/release`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${LOCUS_API_KEY}` }
+  })
+  return response.json() // { transaction_id, status }
+}
+
+async function getWalletBalance(walletId) {
+  const response = await fetch(`${LOCUS_BASE_URL}/wallets/${walletId}`, {
+    headers: { 'Authorization': `Bearer ${LOCUS_API_KEY}` }
+  })
+  return response.json() // { wallet_id, balance, currency }
+}
+
+async function getTransactionHistory(walletId) {
+  const response = await fetch(`${LOCUS_BASE_URL}/wallets/${walletId}/transactions`, {
+    headers: { 'Authorization': `Bearer ${LOCUS_API_KEY}` }
+  })
+  return response.json() // [ { transaction_id, amount, timestamp, ... } ]
+}
+
+module.exports = {
+  createWallet,
+  createEscrow,
+  releaseEscrow,
+  getWalletBalance,
+  getTransactionHistory
+}
+```
+
+**Use these wrappers everywhere money moves. Never mock or fake payments.**
+
+---
+
+### 8. ERROR HANDLING & EDGE CASES
+
+**Critical Error Scenarios:**
+
+**Locus API Failure:**
+```
+If Locus escrow creation fails:
+1. Log error with full details
+2. Mark job as "payment_failed"
+3. Notify coordinator agent
+4. Do NOT proceed with work
+5. Retry escrow creation up to 3 times
+```
+
+**Agent Offline During Job:**
+```
+If assigned agent goes offline:
+1. Wait 30 seconds
+2. If still offline, cancel Locus escrow (return funds to coordinator)
+3. Mark job as "failed"
+4. Repost job to marketplace
+```
+
+**Work Quality Rejected:**
+```
+If coordinator rejects work:
+1. Cancel Locus escrow (return funds to coordinator)
+2. Agent gets $0 payment
+3. Agent's reputation decreases
+4. Job status: "failed"
+5. Repost job or assign to different agent
+```
+
+**Insufficient Budget:**
+```
+If no bids under budget:
+1. Coordinator logs: "No affordable bids"
+2. Options:
+   a. Increase budget if possible
+   b. Negotiate with agents
+   c. Fail gracefully with error message
+```
+
+---
+
+### 9. LOGGING & TRANSPARENCY
+
+**Every action must be logged for demo visibility:**
+
+```javascript
+// logger.js
+function logActivity(type, agent, message, data = {}) {
+  const entry = {
+    timestamp: new Date().toISOString(),
+    type: type, // "job_posted", "bid_submitted", "payment_locked", etc.
+    agent: agent,
+    message: message,
+    data: data
+  }
+  
+  // Store in activity feed (in-memory array)
+  activityFeed.push(entry)
+  
+  // Also console.log for debugging
+  console.log(`[${entry.timestamp}] ${agent}: ${message}`)
+  
+  // Expose via API endpoint for live dashboard
+  return entry
+}
+
+// Usage examples:
+logActivity("job_posted", "coordinator", "Posted web scraping job", { job_id: "job-001", budget: 3.00 })
+logActivity("bid_submitted", "scraper-01", "Submitted bid for $2.50", { job_id: "job-001", price: 2.50 })
+logActivity("payment_locked", "system", "Escrow created via Locus", { escrow_id: "esc_xyz", amount: 2.50 })
+logActivity("work_completed", "scraper-01", "Job completed successfully", { job_id: "job-001" })
+logActivity("payment_released", "system", "Payment released to scraper-01", { amount: 2.50 })
+```
+
+---
+
+### 10. DEMO-READY FEATURES
+
+**For successful hackathon demo, implement:**
+
+**Status Endpoint** (for live dashboard):
+```javascript
+GET /api/status
+
+Response:
+{
+  system_status: "operational",
+  agents: [
+    { id: "coordinator-01", status: "active", wallet_balance: 42.50 },
+    { id: "scraper-01", status: "busy", wallet_balance: 2.50 },
+    { id: "analyst-01", status: "available", wallet_balance: 3.00 },
+    { id: "writer-01", status: "available", wallet_balance: 2.00 }
+  ],
+  active_jobs: [
+    { job_id: "job-002", status: "in_progress", agent: "analyst-01" }
+  ],
+  recent_transactions: [
+    { tx_id: "txn-001", type: "escrow_release", amount: 2.50, timestamp: "..." },
+    { tx_id: "txn-002", type: "escrow_create", amount: 3.00, timestamp: "..." }
+  ],
+  total_value_transacted: 7.50
+}
+```
+
+**Activity Feed Endpoint** (for live updates):
+```javascript
+GET /api/activity/recent?limit=20
+
+Response: [
+  { timestamp, type, agent, message, data },
+  ...
+]
+```
+
+**Test Endpoint** (trigger demo flow):
+```javascript
+POST /api/demo/start
+{
+  research_query: "Research Tesla's main competitors"
+}
+
+Response: Kicks off entire workflow, returns job_id to track
+```
+
+---
+
+### 11. 10-HOUR IMPLEMENTATION PLAN
+
+**Hour 1-2: Core Infrastructure**
+- Set up Express/Flask server
+- Implement in-memory data storage
+- Create basic API endpoints (jobs, bids)
+- Set up Locus SDK wrapper (even if using mock initially)
+
+**Hour 3-4: Locus Integration (PRIORITY)**
+- Create real Locus wallets for all 4 agents
+- Implement escrow creation
+- Implement escrow release
+- Test full payment flow with real money
+- **DO NOT PROCEED until Locus works 100%**
+
+**Hour 5-6: Agent Logic**
+- Implement Coordinator Agent (job posting, bid evaluation)
+- Implement Scraper Agent (polling, bidding, work execution)
+- Integrate Claude API for decision-making
+- Test: Coordinator posts job → Scraper bids → Coordinator accepts
+
+**Hour 7-8: Complete Workflow**
+- Implement Analysis Agent
+- Implement Writer Agent
+- Test full flow: research request → 3 jobs → 3 payments → final report
+- Verify all Locus transactions complete successfully
+
+**Hour 9: Polish & Error Handling**
+- Add comprehensive logging
+- Implement error recovery
+- Test edge cases (failed payments, offline agents)
+- Verify transaction history accuracy
+
+**Hour 10: Demo Preparation**
+- Create test scenarios
+- Document API endpoints
+- Prepare demo script
+- Test end-to-end multiple times
+- Ensure Locus dashboard shows all transactions
+
+---
+
+### 12. SUCCESS CRITERIA
+
+**Before declaring "done", verify:**
+
+✅ **Locus payments work 100%:**
+   - All 4 agents have real Locus wallets
+   - Escrow locks funds correctly
+   - Escrow releases funds correctly
+   - Balances update in real-time
+   - Transaction history is accurate
+
+✅ **Agent autonomy demonstrated:**
+   - Agents calculate their own bid prices
+   - Coordinator evaluates bids intelligently
+   - No hardcoded decisions
+
+✅ **Complete workflow executes:**
+   - Human input → Coordinator breaks down → 3 jobs posted → 3 bids → 3 accepts → 3 escrows → 3 work completions → 3 releases → Final report delivered
+
+✅ **Error handling works:**
+   - Failed payments recover gracefully
+   - Rejected work returns funds
+   - Offline agents don't break system
+
+✅ **Observable & transparent:**
+   - All actions logged
+   - API endpoints expose current state
+   - Can track money flow through system
+
+---
+
+### 13. WHAT TO SKIP (For 10-Hour MVP)
+
+❌ **Do NOT build:**
+- User authentication
+- Persistent database (use in-memory)
+- Frontend UI (focus on backend/API)
+- Multiple coordinator agents
+- Agent reputation system (just track stats)
+- Complex negotiation logic
+- Web scraping from scratch (use libraries/APIs)
+- Payment refunds (just cancellation)
+
+**Build only what demonstrates: Agent-to-agent marketplace + Locus payments working flawlessly**
+
+---
+
+## FINAL DIRECTIVE
+
+Your ONLY job is to make Locus payments work perfectly in an agent-to-agent economy. Everything else is secondary. If you run out of time, have a working system with 1 coordinator and 1 worker agent, but make sure every payment flows through Locus correctly.
+
+**Judges should be able to:**
+1. Trigger a research request
+2. Watch agents post jobs and bid
+3. See Locus escrow lock funds
+4. See agent complete work
+5. See Locus release payment
+6. Verify balances changed in Locus dashboard
+
+If this works, you win. Everything else is bonus.
+
+---
+
+**NOW BUILD IT.**
