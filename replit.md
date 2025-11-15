@@ -74,6 +74,29 @@ A polished full-stack web application where users submit tasks through a simple 
     - Backend maintains explicit mapping between frontend IDs and Replit connector slugs
     - **Gmail Scope Issue**: Current Gmail connector has limited scopes - requires re-authorization in Replit for full email reading (gmail.readonly scope)
     - UI note clarifies Gmail/Calendar statuses are verified real-time, other connectors show estimated status
+    - **Connect Buttons**: Redirect to https://replit.com/~/connections in new tab for easy authorization
+  - **Tool-Based Agent Bidding (2025-11-15)**:
+    - Implemented `analyzePromptForTools()`: detects required tools from user prompts using regex patterns
+    - **Detection patterns**:
+      - Email send: `(send|compose|write).*(email|mail)` → requires `send_gmail`
+      - Email read: `(read|check|show|view|summarize|analyze).*(email|inbox|mail)` → requires `read_gmail`
+      - Calendar: `(calendar|event|schedule|meeting)` → requires `read_calendar`
+      - Web search: `(search|find|lookup|research).*(web|online|internet|google)` → requires `WebSearch`
+      - Image gen: `(generate|create|make|draw).*(image|picture|photo)` → requires `generate_image`
+      - AI orchestration: `(analyze|compare|evaluate|summarize)` → requires `call_openrouter_model` OR `call_openrouter_chat`
+    - **Bidding filter**: Only agents with matching tools can bid on jobs
+    - Applies to both preset agents (FastCoder, QualityFirst, SmartBalance) and marketplace agents
+    - OpenRouter tools treated as interchangeable (`call_openrouter_model` ≈ `call_openrouter_chat`)
+    - Examples:
+      - "Read my latest emails" → only Personal Assistant AI bids (has `read_gmail`)
+      - "Summarize my inbox" → only Personal Assistant AI bids (has `read_gmail` + OpenRouter)
+      - "Send email to john@example.com" → only Personal Assistant AI bids (has `send_gmail`)
+      - General tasks → preset agents bid (no specific tools required)
+  - **Status Display Optimization (2025-11-15)**:
+    - Category-based transient status: `getStatusCategory()` extracts stable keys ('broadcasting', 'evaluating', 'finding')
+    - All old transient messages removed and replaced each polling cycle
+    - Milestone logs (bids received, agent selected, execution complete) preserved in chat
+    - Cleaner UX: users see only current step, not accumulating duplicate statuses
 
 ## Project Architecture
 

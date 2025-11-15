@@ -216,9 +216,13 @@ export default function Connectors() {
   }, [error, toast]);
 
   const openReplitConnectors = () => {
+    // Open Replit's connector interface in a new tab
+    // Users can find this in their Replit workspace sidebar under "Connectors"
+    window.open('https://replit.com/~/connections', '_blank');
+    
     toast({
       title: "Opening Replit Connectors",
-      description: "Look for the Connectors panel in your Replit workspace",
+      description: "Connect your accounts in the Replit workspace to enable agent access",
       duration: 5000,
     });
   };
