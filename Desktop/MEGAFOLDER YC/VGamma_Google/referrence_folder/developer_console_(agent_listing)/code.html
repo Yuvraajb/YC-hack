@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>List New Agent - Locus AI Marketplace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings:
+        'FILL' 0,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+      }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "background-dark": "#101922",
+              "custom-blue": "#4A90E2",
+              "custom-green": "#50E3C2",
+              "custom-charcoal": "#24292E",
+              "custom-light-gray": "#F6F8FA",
+              "custom-medium-gray": "#E1E4E8",
+              "custom-error": "#FF4D4F",
+            },
+            fontFamily: {
+              "display": ["Space Grotesk", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-800 dark:text-gray-200">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="w-64 flex-shrink-0 bg-white dark:bg-[#111418] p-4 flex flex-col justify-between border-r border-gray-200 dark:border-gray-800">
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-3">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10" data-alt="Company logo for DevCorp" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBLQgiG8L63AhtZ3M8iVrBhHCoETw4e8NCIRHFsHob2fFtqpbGg_aI9m6Rro9a5Lzbe9obdSU2ar7wSdtid7zUaVXh8H63KX1G__Hkx1B7SBZ5S85BTt34-eopSpVqbg8QYFBki6wnltoVDxI3RHx98qHHqQhQ6aPOryeSyJ33NDuFe77zHIIBBSD4iWZ75FFhdYt8RhdqbrdLCdKIemo-Cqtu2hLl-evbr1IogvCz2MI7SjvvnOH08rU8ZYaJ_z3ozCVr7yUuJ7po");'></div>
+<div class="flex flex-col">
+<h1 class="text-black dark:text-white text-base font-medium leading-normal">DevCorp</h1>
+<p class="text-gray-500 dark:text-[#9dabb9] text-sm font-normal leading-normal">developer@email.com</p>
+</div>
+</div>
+<nav class="flex flex-col gap-2 mt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">dashboard</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Dashboard</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-custom-blue/10 dark:bg-custom-blue/20" href="#">
+<span class="material-symbols-outlined text-custom-blue font-bold">smart_toy</span>
+<p class="text-custom-blue text-sm font-bold leading-normal">My Agents</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">storefront</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Marketplace</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">bar_chart</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Analytics</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">settings</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Settings</p>
+</a>
+</nav>
+</div>
+<div class="flex flex-col gap-4">
+<button class="flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-custom-blue text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-blue-600 transition-colors">
+<span class="truncate">List a New Agent</span>
+</button>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">book</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Documentation</p>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" href="#">
+<span class="material-symbols-outlined text-gray-500 dark:text-white">support_agent</span>
+<p class="text-black dark:text-white text-sm font-medium leading-normal">Support</p>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 p-8 overflow-y-auto">
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="lg:col-span-2">
+<!-- PageHeading -->
+<div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+<h1 class="text-black dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">List Your Agent on the Marketplace</h1>
+</div>
+<!-- Tabs -->
+<div class="pb-3 mb-6">
+<div class="flex border-b border-gray-200 dark:border-gray-700 gap-8">
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-custom-blue pb-[13px] pt-4" href="#">
+<p class="text-custom-blue text-sm font-bold leading-normal tracking-[0.015em]">1. Agent Profile</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-gray-400 dark:text-gray-500 pb-[13px] pt-4" href="#">
+<p class="text-gray-500 dark:text-gray-400 text-sm font-bold leading-normal tracking-[0.015em]">2. Capabilities</p>
+</a>
+<a class="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-gray-400 dark:text-gray-500 pb-[13px] pt-4" href="#">
+<p class="text-gray-500 dark:text-gray-400 text-sm font-bold leading-normal tracking-[0.015em]">3. Monetization</p>
+</a>
+</div>
+</div>
+<!-- Form Content -->
+<div class="space-y-8">
+<!-- Section: Agent Profile -->
+<section>
+<h2 class="text-black dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-5">Agent Profile</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="md:col-span-2">
+<label class="flex flex-col">
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Agent Name</p>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-black dark:text-white focus:outline-0 focus:ring-2 focus:ring-custom-blue/50 border border-gray-300 dark:border-[#3b4754] bg-white dark:bg-[#1c2127] h-12 placeholder:text-gray-400 dark:placeholder:text-[#9dabb9] px-4 text-base font-normal leading-normal" placeholder="e.g., 'Content Summarizer Pro'" value="Content Summarizer Pro"/>
+</label>
+</div>
+<div class="md:col-span-2">
+<label class="flex flex-col">
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Tagline</p>
+<input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-black dark:text-white focus:outline-0 focus:ring-2 focus:ring-custom-blue/50 border border-gray-300 dark:border-[#3b4754] bg-white dark:bg-[#1c2127] h-12 placeholder:text-gray-400 dark:placeholder:text-[#9dabb9] px-4 text-base font-normal leading-normal" placeholder="A short, catchy phrase for your agent" value="Condenses long articles into key points."/>
+</label>
+</div>
+<div class="md:col-span-2">
+<label class="flex flex-col">
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Detailed Description</p>
+<textarea class="form-textarea flex w-full min-w-0 flex-1 resize-y overflow-hidden rounded-lg text-black dark:text-white focus:outline-0 focus:ring-2 focus:ring-custom-blue/50 border border-gray-300 dark:border-[#3b4754] bg-white dark:bg-[#1c2127] min-h-32 placeholder:text-gray-400 dark:placeholder:text-[#9dabb9] p-4 text-base font-normal leading-normal" placeholder="Describe what your agent does. Markdown is supported."></textarea>
+</label>
+</div>
+<div>
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Agent Avatar</p>
+<div class="flex items-center gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-xl size-16" data-alt="Agent avatar showing a document with a magnifying glass" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAl6kFXBsgzIrFXjcPFcmTdUgYpwQ2mEUf0Wzbzb9OcaZ5W4OoBrQ-XWbrux3Xo8NH4wlzx0H-v9m84U_U223QZli1uff_7WmMVPZIoXi90n9od6W3eL837UHu5NZqvrzITxDaCwVix5Ja6Gb7zaV1ZOWGiqe2zFeC0UOEqaoE844g5lEuEUcewnJLrYptwJWoQz_l2GQIVOkWeap-oXdja3nKHkXoOvoHZ3777ijbDSq8cPX0OB5r7bptwQ-BvOk6p8QDvOlR6jhA");'></div>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600">
+<span class="truncate">Upload Icon</span>
+</button>
+</div>
+</div>
+<div>
+<label class="flex flex-col">
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Category</p>
+<select class="form-select flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-black dark:text-white focus:outline-0 focus:ring-2 focus:ring-custom-blue/50 border border-gray-300 dark:border-[#3b4754] bg-white dark:bg-[#1c2127] h-12 placeholder:text-gray-400 dark:placeholder:text-[#9dabb9] px-4 text-base font-normal leading-normal">
+<option>Content Creation</option>
+<option>Data Analysis</option>
+<option>Customer Support</option>
+<option>Productivity</option>
+</select>
+</label>
+</div>
+<div class="md:col-span-2">
+<label class="flex flex-col">
+<p class="text-black dark:text-white text-base font-medium leading-normal pb-2">Skill &amp; Capability Tags</p>
+<div class="flex flex-wrap items-center gap-2 rounded-lg border border-gray-300 dark:border-[#3b4754] bg-white dark:bg-[#1c2127] p-2">
+<div class="flex items-center gap-1 bg-custom-blue/10 dark:bg-custom-blue/20 text-custom-blue rounded-full px-3 py-1 text-sm">
+<span>summarization</span>
+<button class="text-custom-blue/60 hover:text-custom-blue">
+<span class="material-symbols-outlined text-base">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1 bg-custom-blue/10 dark:bg-custom-blue/20 text-custom-blue rounded-full px-3 py-1 text-sm">
+<span>nlp</span>
+<button class="text-custom-blue/60 hover:text-custom-blue">
+<span class="material-symbols-outlined text-base">close</span>
+</button>
+</div>
+<div class="flex items-center gap-1 bg-custom-blue/10 dark:bg-custom-blue/20 text-custom-blue rounded-full px-3 py-1 text-sm">
+<span>text-analysis</span>
+<button class="text-custom-blue/60 hover:text-custom-blue">
+<span class="material-symbols-outlined text-base">close</span>
+</button>
+</div>
+<input class="form-input flex-1 bg-transparent focus:outline-none focus:ring-0 border-0 p-1 text-black dark:text-white" placeholder="Add a tag..."/>
+</div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- Action Buttons -->
+<div class="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-gray-200 dark:bg-gray-700 text-black dark:text-white text-sm font-bold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+<span class="truncate">Save Draft</span>
+</button>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-custom-blue text-white text-sm font-bold hover:bg-blue-600 transition-colors">
+<span class="truncate">Next: Capabilities</span>
+</button>
+</div>
+</div>
+<!-- Right Sidebar: Live Preview -->
+<aside class="hidden lg:block relative">
+<div class="sticky top-8 space-y-4">
+<h3 class="text-lg font-bold text-black dark:text-white">Marketplace Preview</h3>
+<div class="bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 shadow-sm">
+<div class="flex items-start gap-4">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-lg size-16 flex-shrink-0" data-alt="Agent avatar showing a document with a magnifying glass" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD4YBMijPgjktd7wCRMvE5ywmp23elC-sIqS_aLngua4qrWlSAn4JkE-PNkrvtqtuyUxoR8uS2QH9gMgMWupzS5WJoOYnXtG-G4FrkxEe40ZsYvtibCQoxUFJaHY9T9I6wnEGENYUr0d0mYTTnKh0utP3KK_GUr83VTvvoGgoC65EIvVe-KPh0-1K1WdTReKGr7GleLqECstE11DIeXWY9Ej1FrD3N7NIPejCBH3mXJVLhXO1oSR1ikl5zYfeUGLKR8sQbvphZu2Xk");'></div>
+<div class="flex flex-col">
+<h4 class="text-lg font-bold text-black dark:text-white">Content Summarizer Pro</h4>
+<p class="text-sm text-gray-500 dark:text-gray-400">by DevCorp</p>
+<div class="mt-1 flex items-center gap-1 text-amber-400">
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-base" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-base">star</span>
+<span class="text-xs text-gray-500 dark:text-gray-400 ml-1">(12 reviews)</span>
+</div>
+</div>
+</div>
+<p class="mt-4 text-sm text-gray-600 dark:text-gray-300">Condenses long articles and documents into concise, easy-to-read key points. Perfect for researchers, students, and busy professionals.</p>
+<div class="mt-4 flex flex-wrap gap-2">
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">summarization</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">nlp</span>
+<span class="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs font-medium px-2.5 py-1 rounded-full">text-analysis</span>
+</div>
+<div class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 flex justify-between items-center">
+<div>
+<p class="text-xs text-gray-500 dark:text-gray-400">Starting at</p>
+<p class="text-xl font-bold text-black dark:text-white">$0.05 / call</p>
+</div>
+<button class="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-custom-blue text-white text-sm font-bold">
+<span class="truncate">View Details</span>
+</button>
+</div>
+</div>
+<div class="bg-blue-50 dark:bg-custom-blue/10 border border-blue-200 dark:border-custom-blue/30 rounded-xl p-4 flex items-start gap-3">
+<span class="material-symbols-outlined text-custom-blue mt-1">help_outline</span>
+<div>
+<h4 class="font-bold text-custom-blue">Tips for a Great Profile</h4>
+<p class="text-sm text-blue-800 dark:text-blue-200 mt-1">Use a clear name, a compelling tagline, and relevant tags to help users discover your agent.</p>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+</div>
+</body></html>
