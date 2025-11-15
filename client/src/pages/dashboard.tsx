@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Activity, Wallet, Briefcase, TrendingUp } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { Activity, Wallet, Briefcase, TrendingUp, Send, Loader2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Job, Agent, Transaction } from "@shared/schema";
 
 function JobCard({ job }: { job: Job }) {
@@ -46,6 +50,11 @@ function JobCard({ job }: { job: Job }) {
             <span className="text-muted-foreground">Assigned to:</span>{" "}
             <span className="font-medium">{job.acceptedBid.agentId}</span>
             <span className="text-muted-foreground ml-2">${job.acceptedBid.price}</span>
+          </div>
+        )}
+        {job.submission && (
+          <div className="mt-2 text-xs text-muted-foreground" data-testid={`text-job-submission-${job.id}`}>
+            Work submitted, awaiting verification
           </div>
         )}
       </CardContent>
@@ -134,16 +143,24 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
 }
 
 export default function Dashboard() {
+  const [researchRequest, setResearchRequest] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  // Real-time polling every 2 seconds
   const { data: jobs, isLoading: jobsLoading } = useQuery<Job[]>({
     queryKey: ["/api/jobs"],
+    refetchInterval: 2000,
   });
 
   const { data: agents, isLoading: agentsLoading } = useQuery<Agent[]>({
     queryKey: ["/api/agents"],
+    refetchInterval: 2000,
   });
 
   const { data: transactions, isLoading: transactionsLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"],
+    refetchInterval: 2000,
   });
 
   const stats = {
@@ -156,9 +173,43 @@ export default function Dashboard() {
       .toFixed(2) || "0.00",
   };
 
+  const handleResearchSubmit = async () => {
+    if (!researchRequest.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a research request",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await apiRequest("POST", "/api/research", { request: researchRequest });
+      
+      toast({
+        title: "Research Initiated",
+        description: `${response.jobs.length} jobs created. Agents will start bidding shortly.`,
+      });
+
+      setResearchRequest("");
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/jobs"] });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit research request",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+      <header className="border-b bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
@@ -230,33 +281,72 @@ export default function Dashboard() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Job Feed</h2>
-              <Button size="sm" data-testid="button-refresh-jobs">
-                Refresh
-              </Button>
-            </div>
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Submit Research Request</CardTitle>
+                <CardDescription>
+                  Agents will autonomously break down your request, bid on tasks, and complete the work
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Textarea
+                  placeholder="Example: Research Tesla's main competitors and their pricing strategies"
+                  value={researchRequest}
+                  onChange={(e) => setResearchRequest(e.target.value)}
+                  className="min-h-24"
+                  data-testid="input-research-request"
+                />
+                <Button
+                  onClick={handleResearchSubmit}
+                  disabled={isSubmitting}
+                  className="w-full"
+                  data-testid="button-submit-research"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4 mr-2" />
+                      Submit Research Request
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
 
-            {jobsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-32 w-full" />
-                ))}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Job Feed</h2>
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Activity className="w-3 h-3 animate-pulse" />
+                  <span>Live updates</span>
+                </div>
               </div>
-            ) : jobs && jobs.length > 0 ? (
-              <div className="space-y-3">
-                {jobs.map((job) => (
-                  <JobCard key={job.id} job={job} />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="pt-6 pb-6 text-center text-muted-foreground">
-                  No jobs posted yet
-                </CardContent>
-              </Card>
-            )}
+
+              {jobsLoading ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32 w-full" />
+                  ))}
+                </div>
+              ) : jobs && jobs.length > 0 ? (
+                <div className="space-y-3">
+                  {jobs.map((job) => (
+                    <JobCard key={job.id} job={job} />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="pt-6 pb-6 text-center text-muted-foreground">
+                    No jobs posted yet. Submit a research request above to get started!
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -264,7 +354,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-semibold mb-4">Agents</h2>
               {agentsLoading ? (
                 <div className="space-y-3">
-                  {[1, 2, 3, 4].map((i) => (
+                  {[1, 2, 3].map((i) => (
                     <Skeleton key={i} className="h-32 w-full" />
                   ))}
                 </div>

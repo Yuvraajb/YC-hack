@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { CoordinatorAgent } from "./agents/coordinator";
 import { ScraperAgent } from "./agents/scraper";
 import { AnalystAgent } from "./agents/analyst";
+import { WriterAgent } from "./agents/writer";
 
 const app = express();
 
@@ -12,6 +13,7 @@ const app = express();
 let coordinatorAgent: CoordinatorAgent;
 let scraperAgent: ScraperAgent;
 let analystAgent: AnalystAgent;
+let writerAgent: WriterAgent;
 
 declare module 'http' {
   interface IncomingMessage {
@@ -144,6 +146,17 @@ async function initializeAgents() {
       },
     });
 
+    await storage.createAgent({
+      name: "Writer Agent",
+      type: "writer",
+      walletBalance: "0.00",
+      status: "available",
+      pricingModel: {
+        baseRate: 1.2,
+        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+      },
+    });
+
     log("✓ Agents initialized in marketplace");
   } catch (error: any) {
     log(`Error initializing agents: ${error.message}`);
@@ -156,10 +169,12 @@ function startAgents() {
   coordinatorAgent = new CoordinatorAgent();
   scraperAgent = new ScraperAgent();
   analystAgent = new AnalystAgent();
+  writerAgent = new WriterAgent();
 
   coordinatorAgent.start();
   scraperAgent.start();
   analystAgent.start();
+  writerAgent.start();
 
   log("✓ All agents are now autonomously operating");
 }
@@ -168,4 +183,5 @@ function stopAgents() {
   if (coordinatorAgent) coordinatorAgent.stop();
   if (scraperAgent) scraperAgent.stop();
   if (analystAgent) analystAgent.stop();
+  if (writerAgent) writerAgent.stop();
 }
