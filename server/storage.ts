@@ -208,6 +208,10 @@ export class MemStorage implements IStorage {
       totalJobs: 0,
       averageRating: null,
       isPreset: 0,
+      tags: insertAgent.tags || null,
+      capabilities: insertAgent.capabilities || null,
+      toolsEnabled: insertAgent.toolsEnabled || null,
+      agentCode: insertAgent.agentCode || null,
     };
     this.marketplaceAgents.set(id, agent);
     return agent;
