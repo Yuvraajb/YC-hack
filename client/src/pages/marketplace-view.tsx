@@ -114,15 +114,15 @@ export default function MarketplaceView() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <div className="space-y-8">
               <Card className="rounded-xl border-card-border">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <CardTitle className="text-base font-medium">Active Jobs</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <ScrollArea className="h-[500px] px-4 pb-6">
-                    <div className="space-y-3 px-2">
+                  <ScrollArea className="h-[500px] pb-6">
+                    <div className="space-y-4 px-6">
                       {mockJobs.map((job) => (
                         <JobCard
                           key={job.id}
@@ -140,12 +140,12 @@ export default function MarketplaceView() {
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               <Card className="rounded-xl border-card-border">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <CardTitle className="text-base font-medium">Agent Bids</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {mockBids.map((bid) => (
                     <AgentBidCard key={bid.agentId} bid={bid} />
                   ))}
@@ -153,14 +153,14 @@ export default function MarketplaceView() {
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
               <ExecutionLog logs={mockLogs} />
               
               <Card className="rounded-xl border-card-border">
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-4">
                   <CardTitle className="text-base font-medium">Recent Payments</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   {mockPayments.map((payment) => (
                     <PaymentCard key={payment.txId} payment={payment} />
                   ))}

@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import StatusBadge, { type JobStatus } from "./StatusBadge";
 import { Clock } from "lucide-react";
+
+export type JobStatus = "pending" | "bidding" | "executing" | "completed" | "paid";
 
 export interface Job {
   id: string;
@@ -27,21 +28,18 @@ export default function JobCard({ job, isActive, onClick }: JobCardProps) {
       onClick={onClick}
       data-testid={`card-job-${job.id}`}
     >
-      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" data-testid={`text-prompt-${job.id}`}>
-            {job.prompt}
-          </p>
-        </div>
-        <StatusBadge status={job.status} />
+      <CardHeader className="pb-4">
+        <p className="text-sm font-medium leading-relaxed" data-testid={`text-prompt-${job.id}`}>
+          {job.prompt}
+        </p>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 space-y-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="w-3 h-3" />
           <span data-testid={`text-timestamp-${job.id}`}>{job.timestamp}</span>
         </div>
         {job.selectedAgent && (
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             Agent: <span className="text-foreground font-medium">{job.selectedAgent}</span>
           </div>
         )}
