@@ -3,14 +3,12 @@ import type {
   InsertAgent,
   Job,
   InsertJob,
-  Bid,
-  InsertBid,
   Transaction,
   InsertTransaction,
   JobStatus,
   AgentStatus,
 } from "@shared/schema";
-import { agents, jobs, bids, transactions } from "@shared/schema";
+import { agents, jobs, transactions } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
@@ -18,6 +16,7 @@ import { randomUUID } from "crypto";
 export interface IStorage {
   getAgent(id: string): Promise<Agent | undefined>;
   getAllAgents(): Promise<Agent[]>;
+  getActiveAgents(): Promise<Agent[]>;
   createAgent(agent: InsertAgent): Promise<Agent>;
   updateAgentBalance(id: string, newBalance: string): Promise<void>;
   updateAgentStatus(id: string, status: AgentStatus): Promise<void>;
@@ -28,21 +27,14 @@ export interface IStorage {
   getJobsByStatus(status: JobStatus): Promise<Job[]>;
   createJob(job: InsertJob): Promise<Job>;
   updateJobStatus(id: string, status: JobStatus): Promise<void>;
-  acceptBid(jobId: string, bid: { agentId: string; price: number; acceptedAt: string }): Promise<void>;
-  setJobEscrow(jobId: string, escrowId: string): Promise<void>;
-  submitJobWork(jobId: string, submission: { results: any; submittedAt: string }): Promise<void>;
+  assignAgent(jobId: string, agentId: string, price: string, platformFee: string, total: string, reasoning: string): Promise<void>;
+  submitJobResult(jobId: string, result: any): Promise<void>;
   completeJob(jobId: string): Promise<void>;
   updateJobPayment(jobId: string, payment: { paymentStatus: string; paymentTxHash?: string; locusAmount?: string }): Promise<void>;
-
-  getBid(id: string): Promise<Bid | undefined>;
-  getBidsByJob(jobId: string): Promise<Bid[]>;
-  createBid(bid: InsertBid): Promise<Bid>;
 
   getTransaction(id: string): Promise<Transaction | undefined>;
   getAllTransactions(): Promise<Transaction[]>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-
-  getEscrowBalance(): Promise<string>;
 }
 
 export class DbStorage implements IStorage {
@@ -55,14 +47,18 @@ export class DbStorage implements IStorage {
     return await db.select().from(agents);
   }
 
+  async getActiveAgents(): Promise<Agent[]> {
+    return await db.select().from(agents).where(eq(agents.isActive, "true"));
+  }
+
   async createAgent(insertAgent: InsertAgent): Promise<Agent> {
-    const id = insertAgent.name.toLowerCase().replace(/\s+/g, "-");
+    const id = `agent-${randomUUID().slice(0, 8)}`;
     const result = await db
       .insert(agents)
       .values({
         ...insertAgent,
         id,
-        walletBalance: insertAgent.walletBalance || "0.00",
+        walletBalance: "0.00",
         reputationScore: "0.00",
         jobsCompleted: "0",
         totalEarned: "0.00",
@@ -117,10 +113,7 @@ export class DbStorage implements IStorage {
       .values({
         ...insertJob,
         id,
-        status: "accepting_bids" as JobStatus,
-        acceptedBid: null,
-        escrowId: null,
-        submission: null,
+        status: "pending" as JobStatus,
       })
       .returning();
     return result[0];
@@ -130,35 +123,36 @@ export class DbStorage implements IStorage {
     await db.update(jobs).set({ status }).where(eq(jobs.id, id));
   }
 
-  async acceptBid(
+  async assignAgent(
     jobId: string,
-    bid: { agentId: string; price: number; acceptedAt: string }
+    agentId: string,
+    price: string,
+    platformFee: string,
+    total: string,
+    reasoning: string
   ): Promise<void> {
     await db
       .update(jobs)
       .set({
-        acceptedBid: bid,
-        status: "in_progress",
+        assignedAgentId: agentId,
+        agentPrice: price,
+        platformFee,
+        totalCost: total,
+        matchReasoning: reasoning,
+        status: "assigned" as JobStatus,
       })
       .where(eq(jobs.id, jobId));
   }
 
-  async setJobEscrow(jobId: string, escrowId: string): Promise<void> {
-    await db.update(jobs).set({ escrowId }).where(eq(jobs.id, jobId));
-  }
-
-  async submitJobWork(
-    jobId: string,
-    submission: { results: any; submittedAt: string }
-  ): Promise<void> {
-    await db.update(jobs).set({ submission }).where(eq(jobs.id, jobId));
+  async submitJobResult(jobId: string, result: any): Promise<void> {
+    await db.update(jobs).set({ result, status: "in_progress" as JobStatus }).where(eq(jobs.id, jobId));
   }
 
   async completeJob(jobId: string): Promise<void> {
     await db
       .update(jobs)
       .set({
-        status: "completed",
+        status: "completed" as JobStatus,
         completedAt: new Date(),
       })
       .where(eq(jobs.id, jobId));
@@ -176,27 +170,6 @@ export class DbStorage implements IStorage {
         locusAmount: payment.locusAmount,
       })
       .where(eq(jobs.id, jobId));
-  }
-
-  async getBid(id: string): Promise<Bid | undefined> {
-    const result = await db.select().from(bids).where(eq(bids.id, id));
-    return result[0];
-  }
-
-  async getBidsByJob(jobId: string): Promise<Bid[]> {
-    return await db.select().from(bids).where(eq(bids.jobId, jobId));
-  }
-
-  async createBid(insertBid: InsertBid): Promise<Bid> {
-    const id = `bid-${randomUUID().slice(0, 8)}`;
-    const result = await db
-      .insert(bids)
-      .values({
-        ...insertBid,
-        id,
-      })
-      .returning();
-    return result[0];
   }
 
   async getTransaction(id: string): Promise<Transaction | undefined> {
@@ -219,18 +192,6 @@ export class DbStorage implements IStorage {
       })
       .returning();
     return result[0];
-  }
-
-  async getEscrowBalance(): Promise<string> {
-    const result = await db
-      .select({
-        total: sql<string>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL)), 0)`,
-      })
-      .from(transactions)
-      .where(eq(transactions.type, "escrow_create"));
-
-    const total = parseFloat(result[0]?.total || "0");
-    return total.toFixed(2);
   }
 }
 

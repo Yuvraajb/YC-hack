@@ -1,12 +1,40 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { ledger } from "./ledger";
-import { breakdownResearchRequest, evaluateBids, verifyWork } from "./anthropic";
 import { locusPayment } from "./locus-payment";
+import { matchAgentToRequest, executeAgentTask } from "./agent-matcher";
 import { z } from "zod";
 
+const PLATFORM_FEE_PERCENT = 0.10; // 10% platform fee
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register a new agent
+  app.post("/api/agents", async (req, res) => {
+    try {
+      const { name, description, capabilities, creatorWallet, pricePerCall, apiEndpoint, apiKey } = req.body;
+
+      if (!name || !description || !capabilities || !creatorWallet || !pricePerCall) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const agent = await storage.createAgent({
+        name,
+        description,
+        capabilities: Array.isArray(capabilities) ? capabilities : [capabilities],
+        creatorWallet,
+        pricePerCall: parseFloat(pricePerCall).toFixed(2),
+        apiEndpoint: apiEndpoint || null,
+        apiKey: apiKey || null,
+        status: "available",
+        isActive: "true",
+      });
+
+      res.json(agent);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get all agents
   app.get("/api/agents", async (req, res) => {
     try {
@@ -17,200 +45,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all jobs
-  app.get("/api/jobs", async (req, res) => {
+  // Submit a task
+  app.post("/api/tasks", async (req, res) => {
     try {
-      const status = req.query.status as string | undefined;
-      const jobs = status
-        ? await storage.getJobsByStatus(status as any)
-        : await storage.getAllJobs();
-      res.json(jobs);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
+      const { request, userWallet } = req.body;
 
-  // Create a job
-  app.post("/api/jobs", async (req, res) => {
-    try {
-      const jobData = req.body;
-      const job = await storage.createJob(jobData);
-      res.json(job);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get job details
-  app.get("/api/jobs/:id", async (req, res) => {
-    try {
-      const job = await storage.getJob(req.params.id);
-      if (!job) {
-        return res.status(404).json({ error: "Job not found" });
-      }
-      res.json(job);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get bids for a job
-  app.get("/api/jobs/:id/bids", async (req, res) => {
-    try {
-      const bids = await storage.getBidsByJob(req.params.id);
-      res.json(bids);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Submit a bid
-  app.post("/api/jobs/:id/bids", async (req, res) => {
-    try {
-      const bidData = {
-        ...req.body,
-        jobId: req.params.id,
-      };
-      const bid = await storage.createBid(bidData);
-      res.json(bid);
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Accept a bid (triggers escrow)
-  app.post("/api/jobs/:id/accept", async (req, res) => {
-    try {
-      const { bidId } = req.body;
-      const job = await storage.getJob(req.params.id);
-      const bid = await storage.getBid(bidId);
-
-      if (!job || !bid) {
-        return res.status(404).json({ error: "Job or bid not found" });
+      if (!request || !userWallet) {
+        return res.status(400).json({ error: "Request and userWallet are required" });
       }
 
-      // Create escrow
-      const escrowId = await ledger.createEscrow(
-        job.postedBy,
-        bid.agentId,
-        parseFloat(bid.price),
-        job.id
-      );
-
-      // Update job
-      await storage.acceptBid(job.id, {
-        agentId: bid.agentId,
-        price: parseFloat(bid.price),
-        acceptedAt: new Date().toISOString(),
-      });
-      await storage.setJobEscrow(job.id, escrowId);
-
-      // Update agent status
-      await storage.updateAgentStatus(bid.agentId, "busy");
-
-      res.json({ success: true, escrowId });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Submit work for a job
-  app.post("/api/jobs/:id/submit", async (req, res) => {
-    try {
-      const { agentId, results } = req.body;
-      const job = await storage.getJob(req.params.id);
-
-      if (!job) {
-        return res.status(404).json({ error: "Job not found" });
+      // Find the best agent for this task
+      const availableAgents = await storage.getActiveAgents();
+      
+      if (availableAgents.length === 0) {
+        return res.status(503).json({ error: "No agents available at the moment" });
       }
 
-      if (job.acceptedBid?.agentId !== agentId) {
-        return res.status(403).json({ error: "Not assigned to this agent" });
-      }
+      const match = await matchAgentToRequest(request, availableAgents);
 
-      await storage.submitJobWork(job.id, {
-        results,
-        submittedAt: new Date().toISOString(),
-      });
-
-      // Update agent status back to available
-      await storage.updateAgentStatus(agentId, "available");
-
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Verify and release payment
-  app.post("/api/jobs/:id/verify", async (req, res) => {
-    try {
-      const job = await storage.getJob(req.params.id);
-
-      if (!job || !job.submission || !job.acceptedBid || !job.escrowId) {
-        return res.status(400).json({ error: "Job not ready for verification" });
-      }
-
-      // Check if user payment is required and not paid yet
-      if (job.paymentStatus === "pending") {
-        return res.status(402).json({ 
-          error: "Payment required before releasing funds to agent",
-          paymentRequired: job.paymentRequired,
-          locusAmount: job.locusAmount,
+      if (match.confidence < 0.5) {
+        return res.status(400).json({ 
+          error: "No suitable agent found",
+          reasoning: match.reasoning,
         });
       }
 
-      // Use Claude AI to verify work
-      const verification = await verifyWork(
-        job.description,
-        job.requirements,
-        job.submission.results
+      const agent = availableAgents.find(a => a.id === match.agentId);
+      if (!agent) {
+        return res.status(500).json({ error: "Matched agent not found" });
+      }
+
+      // Calculate pricing
+      const agentPrice = parseFloat(agent.pricePerCall);
+      const platformFee = agentPrice * PLATFORM_FEE_PERCENT;
+      const totalCost = agentPrice + platformFee;
+
+      // Convert to LOCUS
+      const locusAmount = await locusPayment.convertUsdToLocus(totalCost);
+
+      // Create job
+      const job = await storage.createJob({
+        userRequest: request,
+        userWallet,
+        assignedAgentId: null,
+        status: "pending",
+        paymentStatus: "pending",
+      });
+
+      // Assign agent
+      await storage.assignAgent(
+        job.id,
+        agent.id,
+        agentPrice.toFixed(2),
+        platformFee.toFixed(2),
+        totalCost.toFixed(2),
+        match.reasoning
       );
 
-      if (verification.approved) {
-        // Release escrow payment
-        await ledger.releaseEscrow(
-          job.escrowId,
-          job.acceptedBid.agentId,
-          job.acceptedBid.price,
-          job.id
-        );
+      // Execute task asynchronously
+      executeAgentTask(agent, request)
+        .then(async (result) => {
+          await storage.submitJobResult(job.id, result);
+        })
+        .catch((error) => {
+          console.error(`[TaskExecution] Failed:`, error);
+          storage.updateJobStatus(job.id, "failed");
+        });
 
-        // Mark job as completed
-        await storage.completeJob(job.id);
-
-        res.json({ success: true, verification });
-      } else {
-        // Cancel escrow, return funds
-        await ledger.cancelEscrow(
-          job.escrowId,
-          job.postedBy,
-          job.acceptedBid.price,
-          job.id
-        );
-
-        // Mark job as failed
-        await storage.updateJobStatus(job.id, "failed");
-
-        res.json({ success: false, verification });
-      }
+      res.json({
+        success: true,
+        jobId: job.id,
+        agent: {
+          id: agent.id,
+          name: agent.name,
+          description: agent.description,
+        },
+        matchReasoning: match.reasoning,
+        pricing: {
+          agentPrice: agentPrice.toFixed(2),
+          platformFee: platformFee.toFixed(2),
+          totalCost: totalCost.toFixed(2),
+          locusAmount,
+        },
+        message: "Task assigned. Agent is working on your request. You can pay after results are delivered.",
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Confirm user payment
-  app.post("/api/jobs/:id/confirm-payment", async (req, res) => {
+  // Get all tasks/jobs
+  app.get("/api/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getAllJobs();
+      res.json(tasks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get single task
+  app.get("/api/tasks/:id", async (req, res) => {
+    try {
+      const task = await storage.getJob(req.params.id);
+      if (!task) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      res.json(task);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Confirm payment for a task
+  app.post("/api/tasks/:id/confirm-payment", async (req, res) => {
     try {
       const { txHash } = req.body;
       const job = await storage.getJob(req.params.id);
 
       if (!job) {
-        return res.status(404).json({ error: "Job not found" });
+        return res.status(404).json({ error: "Task not found" });
       }
 
       if (job.paymentStatus !== "pending") {
         return res.status(400).json({ error: "Payment not required or already paid" });
+      }
+
+      if (!job.result) {
+        return res.status(400).json({ error: "Task not completed yet. Please wait for results before paying." });
       }
 
       // Verify the transaction on blockchain
@@ -220,34 +182,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: paymentResult.error });
       }
 
-      // Update job payment status
+      // Update payment status
       await storage.updateJobPayment(job.id, {
         paymentStatus: "paid",
         paymentTxHash: txHash,
         locusAmount: paymentResult.amount,
       });
 
+      // Complete the job
+      await storage.completeJob(job.id);
+
+      // Get agent info for payment distribution
+      const agent = await storage.getAgent(job.assignedAgentId!);
+      if (!agent) {
+        return res.status(500).json({ error: "Agent not found" });
+      }
+
+      // Record transactions
+      const agentPrice = parseFloat(job.agentPrice!);
+      const platformFee = parseFloat(job.platformFee!);
+
+      // Platform fee transaction
+      await storage.createTransaction({
+        type: "platform_fee",
+        fromWallet: job.userWallet,
+        toWallet: process.env.LOCUS_OWNER_KEY!,
+        amount: platformFee.toFixed(2),
+        jobId: job.id,
+        status: "completed",
+      });
+
+      // Creator earning transaction
+      await storage.createTransaction({
+        type: "creator_earning",
+        fromWallet: job.userWallet,
+        toWallet: agent.creatorWallet,
+        amount: agentPrice.toFixed(2),
+        jobId: job.id,
+        status: "completed",
+      });
+
+      // Update agent stats
+      await storage.incrementAgentStats(agent.id, agentPrice.toFixed(2));
+
       res.json({
         success: true,
-        message: "Payment confirmed",
-        amount: paymentResult.amount,
-        from: paymentResult.from,
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // Get payment status
-  app.get("/api/payment/status", async (req, res) => {
-    try {
-      const balance = await locusPayment.getOwnerBalance();
-      const usdRate = await locusPayment.getUsdToLocusRate();
-      
-      res.json({
-        ownerBalance: balance,
-        locusUsdRate: usdRate,
-        ownerAddress: process.env.LOCUS_OWNER_KEY,
+        message: "Payment confirmed. Task completed!",
+        distribution: {
+          agentCreator: { wallet: agent.creatorWallet, amount: agentPrice.toFixed(2) },
+          platform: { wallet: process.env.LOCUS_OWNER_KEY, amount: platformFee.toFixed(2) },
+        },
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -264,82 +248,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Research request endpoint (initiates the full workflow)
-  app.post("/api/research", async (req, res) => {
+  // Get payment status
+  app.get("/api/payment/status", async (req, res) => {
     try {
-      const { request, userWallet } = req.body;
-
-      if (!request) {
-        return res.status(400).json({ error: "Research request required" });
-      }
-
-      // Use Claude AI to break down request into tasks
-      const breakdown = await breakdownResearchRequest(request);
-
-      // Calculate total cost
-      const totalCost = breakdown.tasks.reduce((sum, task) => sum + task.budgetMax, 0);
-
-      // Create jobs for each task
-      const jobs = [];
-      for (const task of breakdown.tasks) {
-        const job = await storage.createJob({
-          type: task.type,
-          description: task.description,
-          requirements: task.requirements,
-          budgetMax: task.budgetMax.toFixed(2),
-          postedBy: "coordinator-agent",
-          status: "accepting_bids",
-          userWallet: userWallet || null,
-          paymentRequired: userWallet ? task.budgetMax.toFixed(2) : null,
-          paymentStatus: userWallet ? "pending" : "not_required",
-        });
-        jobs.push(job);
-      }
-
-      // If user wallet provided, calculate LOCUS amount
-      let paymentInfo = null;
-      if (userWallet) {
-        const locusAmount = await locusPayment.convertUsdToLocus(totalCost);
-        paymentInfo = {
-          totalUsd: totalCost.toFixed(2),
-          locusAmount,
-          userWallet,
-        };
-      }
-
+      const balance = await locusPayment.getOwnerBalance();
+      const usdRate = await locusPayment.getUsdToLocusRate();
+      
       res.json({
-        success: true,
-        breakdown,
-        jobs,
-        paymentInfo,
+        ownerBalance: balance,
+        locusUsdRate: usdRate,
+        ownerAddress: process.env.LOCUS_OWNER_KEY,
+        platformFeePercent: PLATFORM_FEE_PERCENT * 100,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // System status endpoint
+  // System status
   app.get("/api/status", async (req, res) => {
     try {
       const agents = await storage.getAllAgents();
-      const jobs = await storage.getAllJobs();
-      const escrowBalance = await ledger.getEscrowBalance();
+      const tasks = await storage.getAllJobs();
 
       res.json({
         status: "online",
         agents: {
           total: agents.length,
+          active: agents.filter((a) => a.isActive === "true").length,
           available: agents.filter((a) => a.status === "available").length,
-          busy: agents.filter((a) => a.status === "busy").length,
         },
-        jobs: {
-          total: jobs.length,
-          accepting_bids: jobs.filter((j) => j.status === "accepting_bids").length,
-          in_progress: jobs.filter((j) => j.status === "in_progress").length,
-          completed: jobs.filter((j) => j.status === "completed").length,
-        },
-        escrow: {
-          balance: escrowBalance,
+        tasks: {
+          total: tasks.length,
+          pending: tasks.filter((j) => j.status === "pending").length,
+          in_progress: tasks.filter((j) => j.status === "in_progress").length,
+          completed: tasks.filter((j) => j.status === "completed").length,
         },
       });
     } catch (error: any) {

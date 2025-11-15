@@ -2,18 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { storage } from "./storage";
-import { CoordinatorAgent } from "./agents/coordinator";
-import { ScraperAgent } from "./agents/scraper";
-import { AnalystAgent } from "./agents/analyst";
-import { WriterAgent } from "./agents/writer";
 
 const app = express();
-
-// Initialize agents
-let coordinatorAgent: CoordinatorAgent;
-let scraperAgents: ScraperAgent[] = [];
-let analystAgents: AnalystAgent[] = [];
-let writerAgents: WriterAgent[] = [];
 
 declare module 'http' {
   interface IncomingMessage {
@@ -58,8 +48,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize marketplace agents in database
-  await initializeAgents();
+  // Initialize seed agents if database is empty
+  await initializeSeedAgents();
 
   const server = await registerRoutes(app);
 
@@ -90,193 +80,74 @@ app.use((req, res, next) => {
     host: "0.0.0.0",
     reusePort: true,
   }, () => {
-    log(`serving on port ${port}`);
-
-    // Start autonomous agents after server is ready
-    setTimeout(() => {
-      startAgents();
-    }, 1000);
-  });
-
-  // Graceful shutdown
-  process.on('SIGTERM', () => {
-    log('SIGTERM received, stopping agents...');
-    stopAgents();
-    process.exit(0);
-  });
-
-  process.on('SIGINT', () => {
-    log('SIGINT received, stopping agents...');
-    stopAgents();
-    process.exit(0);
+    log(`AI Agent Marketplace serving on port ${port}`);
+    log(`Platform fee: 10% | Payment: Locus tokens`);
   });
 })();
 
-async function initializeAgents() {
+async function initializeSeedAgents() {
   try {
     const existingAgents = await storage.getAllAgents();
     
     if (existingAgents.length === 0) {
-      // Create coordinator agent with starting balance
-      await storage.createAgent({
-        name: "Coordinator Agent",
-        type: "coordinator",
-        walletBalance: "100.00",
-        status: "available",
-        pricingModel: null,
-      });
+      log("Seeding marketplace with initial agents...");
 
-      // Create multiple competing scrapers with different pricing
+      // Seed diverse agents
       await storage.createAgent({
-        name: "Fast Scraper",
-        type: "web_scraper",
-        walletBalance: "0.00",
+        name: "Research Pro",
+        description: "Expert at conducting comprehensive research on any topic. I gather data from multiple sources, analyze trends, and provide detailed insights.",
+        capabilities: ["research", "data analysis", "report writing", "fact-checking"],
+        creatorWallet: process.env.LOCUS_OWNER_KEY || "0x0000000000000000000000000000000000000000",
+        pricePerCall: "5.00",
         status: "available",
-        pricingModel: {
-          baseRate: 0.8,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
+        isActive: "true",
       });
 
       await storage.createAgent({
-        name: "Premium Scraper",
-        type: "web_scraper",
-        walletBalance: "0.00",
+        name: "Code Helper",
+        description: "Programming assistant that helps with code review, debugging, and writing clean, efficient code across multiple languages.",
+        capabilities: ["coding", "debugging", "code review", "documentation"],
+        creatorWallet: process.env.LOCUS_OWNER_KEY || "0x0000000000000000000000000000000000000000",
+        pricePerCall: "7.00",
         status: "available",
-        pricingModel: {
-          baseRate: 1.2,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
+        isActive: "true",
       });
 
-      await storage.createAgent({
-        name: "Budget Scraper",
-        type: "web_scraper",
-        walletBalance: "0.00",
-        status: "available",
-        pricingModel: {
-          baseRate: 0.6,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
-      });
-
-      // Create multiple competing analysts
-      await storage.createAgent({
-        name: "Data Analyst Pro",
-        type: "analysis",
-        walletBalance: "0.00",
-        status: "available",
-        pricingModel: {
-          baseRate: 1.4,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
-      });
-
-      await storage.createAgent({
-        name: "Quick Analyst",
-        type: "analysis",
-        walletBalance: "0.00",
-        status: "available",
-        pricingModel: {
-          baseRate: 1.0,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
-      });
-
-      await storage.createAgent({
-        name: "Expert Analyst",
-        type: "analysis",
-        walletBalance: "0.00",
-        status: "available",
-        pricingModel: {
-          baseRate: 1.8,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
-      });
-
-      // Create multiple competing writers
       await storage.createAgent({
         name: "Content Writer",
-        type: "writer",
-        walletBalance: "0.00",
+        description: "Professional content creator specializing in blog posts, articles, social media content, and marketing copy.",
+        capabilities: ["writing", "content creation", "copywriting", "editing"],
+        creatorWallet: process.env.LOCUS_OWNER_KEY || "0x0000000000000000000000000000000000000000",
+        pricePerCall: "4.00",
         status: "available",
-        pricingModel: {
-          baseRate: 1.0,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
+        isActive: "true",
       });
 
       await storage.createAgent({
-        name: "Technical Writer",
-        type: "writer",
-        walletBalance: "0.00",
+        name: "Data Analyst",
+        description: "Specializes in data analysis, visualization, and extracting actionable insights from complex datasets.",
+        capabilities: ["data analysis", "visualization", "statistics", "insights"],
+        creatorWallet: process.env.LOCUS_OWNER_KEY || "0x0000000000000000000000000000000000000000",
+        pricePerCall: "6.00",
         status: "available",
-        pricingModel: {
-          baseRate: 1.5,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
+        isActive: "true",
       });
 
       await storage.createAgent({
-        name: "Fast Writer",
-        type: "writer",
-        walletBalance: "0.00",
+        name: "Quick Assistant",
+        description: "Fast, affordable assistant for simple tasks, quick questions, and general help.",
+        capabilities: ["general assistance", "Q&A", "task help", "quick research"],
+        creatorWallet: process.env.LOCUS_OWNER_KEY || "0x0000000000000000000000000000000000000000",
+        pricePerCall: "2.00",
         status: "available",
-        pricingModel: {
-          baseRate: 0.9,
-          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-        },
+        isActive: "true",
       });
 
-      log("✓ Agents initialized in marketplace");
+      log("✓ Seed agents created successfully");
     } else {
-      log(`✓ Agents already exist in database (${existingAgents.length} agents)`);
+      log(`✓ Found ${existingAgents.length} existing agents in marketplace`);
     }
   } catch (error: any) {
     log(`Error initializing agents: ${error.message}`);
   }
-}
-
-async function startAgents() {
-  log("Starting autonomous agents...");
-
-  // Start coordinator
-  coordinatorAgent = new CoordinatorAgent();
-  coordinatorAgent.start();
-
-  // Get all agents from database and start specialists
-  const allAgents = await storage.getAllAgents();
-  
-  // Start all web scrapers
-  const scrapers = allAgents.filter(a => a.type === "web_scraper");
-  scraperAgents = scrapers.map(agent => {
-    const scraper = new ScraperAgent(agent.id, agent.pricingModel?.baseRate || 1.0);
-    scraper.start();
-    return scraper;
-  });
-
-  // Start all analysts
-  const analysts = allAgents.filter(a => a.type === "analysis");
-  analystAgents = analysts.map(agent => {
-    const analyst = new AnalystAgent(agent.id, agent.pricingModel?.baseRate || 1.5);
-    analyst.start();
-    return analyst;
-  });
-
-  // Start all writers
-  const writers = allAgents.filter(a => a.type === "writer");
-  writerAgents = writers.map(agent => {
-    const writer = new WriterAgent(agent.id, agent.pricingModel?.baseRate || 1.2);
-    writer.start();
-    return writer;
-  });
-
-  log(`✓ All agents are now autonomously operating (${1 + scraperAgents.length + analystAgents.length + writerAgents.length} total)`);
-}
-
-function stopAgents() {
-  if (coordinatorAgent) coordinatorAgent.stop();
-  scraperAgents.forEach(agent => agent.stop());
-  analystAgents.forEach(agent => agent.stop());
-  writerAgents.forEach(agent => agent.stop());
 }
