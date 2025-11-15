@@ -99,6 +99,7 @@ export const marketplaceAgents = pgTable("marketplace_agents", {
   minPrice: real("min_price").notNull(),
   maxPrice: real("max_price").notNull(),
   basePrice: real("base_price").notNull(),
+  negotiationStrategy: varchar("negotiation_strategy", { length: 50 }), // aggressive, balanced, conservative
   
   // Agent capabilities
   capabilities: text("capabilities").array(),

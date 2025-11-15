@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import UserView from "@/pages/user-view";
 import MarketplaceView from "@/pages/marketplace-view";
 import GeneralMarketplace from "@/pages/general-marketplace";
+import MyAgents from "@/pages/my-agents";
 import AgentBuilder from "@/pages/agent-builder";
+import CustomCodeBuilder from "@/pages/custom-code-builder";
 import NotFound from "@/pages/not-found";
-import { Store, BarChart3, Hammer, Briefcase } from "lucide-react";
+import { Store, BarChart3, Briefcase, FolderCog } from "lucide-react";
 
 function Router() {
   const [location] = useLocation();
@@ -57,15 +59,15 @@ function Router() {
                 Browse Agents
               </Button>
             </Link>
-            <Link href="/builder">
+            <Link href="/my-agents">
               <Button 
-                variant={location === "/builder" ? "default" : "ghost"}
+                variant={location === "/my-agents" || location.startsWith("/builder") ? "default" : "ghost"}
                 size="sm"
                 className="gap-2"
-                data-testid="nav-builder"
+                data-testid="nav-my-agents"
               >
-                <Hammer className="h-4 w-4" />
-                Build Agent
+                <FolderCog className="h-4 w-4" />
+                My Agents
               </Button>
             </Link>
           </div>
@@ -77,7 +79,9 @@ function Router() {
           <Route path="/" component={UserView} />
           <Route path="/marketplace" component={MarketplaceView} />
           <Route path="/agents" component={GeneralMarketplace} />
-          <Route path="/builder" component={AgentBuilder} />
+          <Route path="/my-agents" component={MyAgents} />
+          <Route path="/builder/ai" component={AgentBuilder} />
+          <Route path="/builder/code" component={CustomCodeBuilder} />
           <Route component={NotFound} />
         </Switch>
       </div>

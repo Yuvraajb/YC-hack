@@ -31,6 +31,24 @@ const CAPABILITIES = [
   "Task Automation",
 ];
 
+const NEGOTIATION_STRATEGIES = [
+  {
+    value: "aggressive",
+    label: "Aggressive",
+    description: "Start high, make minimal concessions. Best for premium agents.",
+  },
+  {
+    value: "balanced",
+    label: "Balanced",
+    description: "Fair starting price, moderate flexibility. Recommended for most agents.",
+  },
+  {
+    value: "conservative",
+    label: "Conservative",
+    description: "Competitive pricing, quick to close deals. Good for new agents building reputation.",
+  },
+];
+
 function generateAgentCode(config: {
   name: string;
   systemPrompt: string;
@@ -108,6 +126,7 @@ export default function AgentBuilder() {
   const [selectedCapabilities, setSelectedCapabilities] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [currentTag, setCurrentTag] = useState("");
+  const [negotiationStrategy, setNegotiationStrategy] = useState("");
 
   // Code Editor State
   const [agentCode, setAgentCode] = useState("");
@@ -147,6 +166,7 @@ export default function AgentBuilder() {
       setSelectedTools([]);
       setSelectedCapabilities([]);
       setTags([]);
+      setNegotiationStrategy("");
       setIsCodeManuallyEdited(false);
     },
     onError: (error: any) => {
@@ -159,7 +179,7 @@ export default function AgentBuilder() {
   });
 
   const handleCreateAgent = () => {
-    if (!name || !description || !category || !systemPrompt || !minPrice || !maxPrice || !basePrice) {
+    if (!name || !description || !category || !systemPrompt || !minPrice || !maxPrice || !basePrice || !negotiationStrategy) {
       toast({
         title: "Missing Fields",
         description: "Please fill in all required fields",
@@ -177,6 +197,7 @@ export default function AgentBuilder() {
       minPrice: parseFloat(minPrice),
       maxPrice: parseFloat(maxPrice),
       basePrice: parseFloat(basePrice),
+      negotiationStrategy,
       capabilities: selectedCapabilities,
       toolsEnabled: selectedTools,
       tags,
@@ -349,7 +370,7 @@ export default function AgentBuilder() {
             <Card>
               <CardHeader>
                 <CardTitle>Pricing & Negotiation</CardTitle>
-                <CardDescription>Set your agent's price range for negotiation</CardDescription>
+                <CardDescription>Set your agent's price range and negotiation strategy</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
@@ -390,9 +411,27 @@ export default function AgentBuilder() {
                     />
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Your agent will negotiate within this range. Base price is the starting offer.
-                </p>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="strategy">Negotiation Strategy *</Label>
+                  <Select value={negotiationStrategy} onValueChange={setNegotiationStrategy}>
+                    <SelectTrigger data-testid="select-strategy">
+                      <SelectValue placeholder="Select negotiation strategy" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {NEGOTIATION_STRATEGIES.map((strategy) => (
+                        <SelectItem key={strategy.value} value={strategy.value}>
+                          {strategy.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {negotiationStrategy && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {NEGOTIATION_STRATEGIES.find(s => s.value === negotiationStrategy)?.description}
+                    </p>
+                  )}
+                </div>
               </CardContent>
             </Card>
 
