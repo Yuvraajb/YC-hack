@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertJobSchema, insertBidSchema, insertPaymentSchema, insertLogSchema, insertMarketplaceAgentSchema, insertDeveloperSchema } from "@shared/schema";
-import { agents, generateBid, calculateBidScore, getAgentById } from "./agents";
+import { agents, generateBid, calculateBidScore, getAgentById, type Agent } from "./agents";
 import { executeAgentTask } from "./agent-sdk";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
@@ -39,6 +39,65 @@ async function addLog(jobId: string, level: string, message: string) {
   });
 }
 
+function analyzePromptForTools(prompt: string): string[] {
+  const requiredTools: Set<string> = new Set();
+  const lowerPrompt = prompt.toLowerCase();
+  
+  // Email sending - only trigger on explicit send intent
+  if (lowerPrompt.match(/\b(send|compose|write)\b.*(email|mail|message)|email.*(send|compose|write)/)) {
+    requiredTools.add("send_gmail");
+  }
+  
+  // Email reading - trigger on read/check/summary/analyze intent
+  if (lowerPrompt.match(/\b(read|check|show|get|fetch|view|see|summarize|analyze)\b.*(email|inbox|mail)|email.*(read|check|summary|list|analyze)|(email|inbox|mail).*(summary|analyze)/)) {
+    requiredTools.add("read_gmail");
+  }
+  
+  // Calendar-related keywords
+  if (lowerPrompt.match(/\b(calendar|event|schedule|meeting|appointment|upcoming)\b/)) {
+    requiredTools.add("read_calendar");
+  }
+  
+  // Image generation keywords
+  if (lowerPrompt.match(/\b(generate|create|make|draw)\b.*(image|picture|photo|visual|illustration)/)) {
+    requiredTools.add("generate_image");
+  }
+  
+  // Web search keywords - only explicit search intent, not generic recency terms
+  if (lowerPrompt.match(/\b(search|research|google)\b/) || 
+      lowerPrompt.includes("look up") || 
+      lowerPrompt.includes("what is") || 
+      lowerPrompt.includes("who is") ||
+      lowerPrompt.match(/\bfind\b.*(information|about|news|price)/)) {
+    requiredTools.add("WebSearch");
+  }
+  
+  // AI model orchestration keywords (often used for analysis/summarization)
+  // Note: We only check that agents have at least ONE OpenRouter tool, not both
+  if (lowerPrompt.match(/\b(analyze|summarize|summary|compare|evaluate|explain)\b/)) {
+    requiredTools.add("call_openrouter_model");
+  }
+  
+  return Array.from(requiredTools);
+}
+
+function agentHasRequiredTools(agentTools: string[], required: string[]): boolean {
+  if (required.length === 0) return true; // No specific tools required, all agents can bid
+  
+  // Special handling: if call_openrouter_model is required, accept agents with EITHER
+  // call_openrouter_model OR call_openrouter_chat (they're interchangeable for orchestration)
+  const hasOpenRouterRequirement = required.includes("call_openrouter_model");
+  const hasOpenRouterTool = agentTools.includes("call_openrouter_model") || 
+                             agentTools.includes("call_openrouter_chat");
+  
+  return required.every(tool => {
+    if (tool === "call_openrouter_model" && hasOpenRouterTool) {
+      return true; // Agent has at least one OpenRouter tool
+    }
+    return agentTools.includes(tool);
+  });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/jobs", async (req, res) => {
     try {
@@ -67,13 +126,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       await storage.updateJob(id, { status: "bidding" });
-      await addLog(id, "info", `Broadcasting to ${agents.length} agents...`);
+      
+      // Analyze prompt to determine required tools
+      const requiredTools = analyzePromptForTools(job.prompt);
+      
+      // Get published marketplace agents
+      const marketplaceAgents = await storage.getPublishedMarketplaceAgents();
+      
+      // Combine preset agents and marketplace agents
+      const allAgents = [
+        ...agents.map(a => ({ type: 'preset', agent: a })),
+        ...marketplaceAgents.map(ma => ({ type: 'marketplace', agent: ma }))
+      ];
+      
+      // Filter agents based on required tools
+      const eligibleAgents = allAgents.filter(({ type, agent }) => {
+        const tools = type === 'preset' 
+          ? (agent as Agent).enabledTools 
+          : (agent as typeof marketplaceAgents[0]).toolsEnabled || [];
+        return agentHasRequiredTools(tools, requiredTools);
+      });
+      
+      if (eligibleAgents.length === 0) {
+        await addLog(id, "warning", "No agents available with the required capabilities for this task.");
+        return res.json([]);
+      }
+      
+      await addLog(id, "info", `Found ${eligibleAgents.length} agents with required capabilities${requiredTools.length > 0 ? ` (${requiredTools.join(', ')})` : ''}...`);
       
       const complexity = 1 + (job.prompt.length / 500);
       
       const bids = [];
-      for (const agent of agents) {
-        const bidData = generateBid(agent, complexity);
+      for (const { type, agent } of eligibleAgents) {
+        let bidData;
+        
+        if (type === 'preset') {
+          bidData = generateBid(agent as Agent, complexity);
+        } else {
+          // Generate bid for marketplace agent
+          const ma = agent as typeof marketplaceAgents[0];
+          const duration = Math.ceil(5 * complexity); // Default 5 min base
+          const price = parseFloat((ma.basePrice * complexity).toFixed(2));
+          const confidence = Math.floor(Math.random() * 11) + 85; // 85-95%
+          
+          bidData = {
+            agentId: ma.id,
+            agentName: ma.name,
+            eta: duration === 1 ? "1 min" : `${duration} min`,
+            price,
+            confidence,
+            plan: ma.description.substring(0, 150) + '...',
+          };
+        }
+        
         const bid = await storage.createBid({
           jobId: id,
           ...bidData,

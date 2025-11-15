@@ -361,7 +361,7 @@ Be concise but thorough. Focus on actionable insights. Use markdown formatting f
     basePrice: 15,
     negotiationStrategy: "balanced",
     capabilities: ["Email Management", "Calendar Management", "AI Summarization", "Task Prioritization"],
-    toolsEnabled: ["read_gmail", "read_calendar", "call_openrouter_model", "call_openrouter_chat"],
+    toolsEnabled: ["read_gmail", "send_gmail", "read_calendar", "call_openrouter_model", "call_openrouter_chat"],
     tags: ["Gmail", "Google Calendar", "Productivity", "AI Summary", "Personal Assistant"],
     status: "published",
   });

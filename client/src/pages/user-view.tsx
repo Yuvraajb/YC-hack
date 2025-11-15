@@ -58,17 +58,47 @@ export default function UserView() {
         const logsResponse = await fetch(`/api/jobs/${currentJobId}/logs`);
         const logs: ExecutionLog[] = await logsResponse.json();
 
-        // Filter out logs we've already displayed using stable identifiers
-        const newLogMessages: Message[] = [];
+        // Extract category from transient status messages for stable keying
+        const getStatusCategory = (msg: string): string | null => {
+          if (msg.startsWith('Broadcasting')) return 'broadcasting';
+          if (msg.startsWith('Evaluating')) return 'evaluating';
+          if (msg.startsWith('Found')) return 'finding';
+          if (msg.startsWith('Job received')) return 'received';
+          return null; // Not a transient status
+        };
+        
+        // Group logs by category: transient status per category + all permanent logs
+        const transientStatusByCategory = new Map<string, ExecutionLog>();
+        const permanentLogs: ExecutionLog[] = [];
         
         for (const log of logs) {
-          // Create stable key using only intrinsic properties (timestamp + message)
-          // This ensures the key stays the same even if logs are reordered or truncated
+          const category = getStatusCategory(log.message);
+          if (category) {
+            // Update the latest transient status for this category
+            transientStatusByCategory.set(category, log);
+          } else {
+            permanentLogs.push(log); // Keep all milestone and execution logs
+          }
+        }
+        
+        // Build messages for transient statuses (keyed by category)
+        const transientMessages: Message[] = [];
+        Array.from(transientStatusByCategory.entries()).forEach(([category, log]) => {
+          transientMessages.push({
+            id: `transient-${category}`,
+            type: 'system',
+            content: log.message,
+            timestamp: new Date()
+          });
+        });
+        
+        // Build messages for permanent logs we haven't shown yet
+        const newPermanentMessages: Message[] = [];
+        for (const log of permanentLogs) {
           const logKey = `${log.timestamp}-${log.message}`;
-          
           if (!displayedLogKeysRef.current.has(logKey)) {
             displayedLogKeysRef.current.add(logKey);
-            newLogMessages.push({
+            newPermanentMessages.push({
               id: `log-${logKey}`,
               type: 'system',
               content: log.message,
@@ -77,9 +107,16 @@ export default function UserView() {
           }
         }
 
-        // Append all new logs in a single update
-        if (newLogMessages.length > 0) {
-          setMessages(prev => [...prev, ...newLogMessages]);
+        // Update messages: remove ALL old transient statuses, add current ones + new permanent logs
+        if (transientMessages.length > 0 || newPermanentMessages.length > 0) {
+          setMessages(prev => {
+            // Remove all previous transient status messages (they'll be replaced with current ones)
+            const withoutTransient = prev.filter(msg => 
+              !(msg.type === 'system' && msg.id.startsWith('transient-'))
+            );
+            // Add current transient statuses and new permanent logs
+            return [...withoutTransient, ...transientMessages, ...newPermanentMessages];
+          });
         }
 
         // Check if job is complete and show output once
