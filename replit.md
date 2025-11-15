@@ -48,11 +48,23 @@ A polished full-stack web application where users submit tasks through a simple 
     - Features: Gmail inbox reading, Calendar event fetching, AI-powered summaries
     - Uses multi-model orchestration (read data → GPT-4/Claude analysis → summary)
     - Pricing: $8-25 (base $15), balanced negotiation strategy
+  - **ChatGPT-Style UX Transformation (2025-11-15)**:
+    - Rebuilt User View with ChatGPT-inspired interface
+    - Centered prompt box transforms into full chat window on submit
+    - Real-time execution log streaming with 1-second polling
+    - Set-based deduplication using intrinsic log properties (timestamp + message)
+    - Auto-execution flow: submit → bid → select → execute (no manual steps)
+    - Message types: user (right), system (logs), assistant (final output)
+    - Added `/api/jobs/:id/logs` endpoint for clean log polling
+    - Robust error handling for async state updates and log reordering
 
 ## Project Architecture
 
 ### Frontend
-- **User View** (`/`): Simple interface for users to submit tasks and view job status
+- **User View** (`/`): ChatGPT-style interface with centered prompt that transforms into chat window on submit
+  - Shows real-time execution logs via polling
+  - Displays final agent output as assistant message
+  - Auto-executes jobs without manual intervention
 - **Marketplace View** (`/marketplace`): Developer dashboard showing active jobs, agent bids, execution logs, and payment history
 - **Browse Agents** (`/agents`): General marketplace for browsing all published agents with search, filtering, and sorting
 - **My Agents** (`/my-agents`): Developer workspace for managing created agents
@@ -72,7 +84,7 @@ A polished full-stack web application where users submit tasks through a simple 
   - High Quality (QualityFirst): Higher price, thorough execution, high confidence
   - Balanced (SmartBalance): Balanced approach across all factors
 - **API Routes**:
-  - Job Management: `POST /api/jobs`, `GET /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs/:id/execute`, `POST /api/jobs/:id/payment`
+  - Job Management: `POST /api/jobs`, `GET /api/jobs`, `GET /api/jobs/:id`, `GET /api/jobs/:id/logs`, `POST /api/jobs/:id/bids`, `POST /api/jobs/:id/select`, `POST /api/jobs/:id/execute`, `POST /api/jobs/:id/payment`
   - Marketplace: `GET /api/marketplace/agents`, `GET /api/payments`
   - Developer Agents: `GET /api/dev/agents`, `POST /api/dev/agents`, `PATCH /api/dev/agents/:id`, `DELETE /api/dev/agents/:id`
 - **Negotiation Strategies**: 
@@ -118,14 +130,17 @@ A polished full-stack web application where users submit tasks through a simple 
 
 ## Workflows
 
-### User Job Submission (Original Flow)
-1. User submits task via User View
-2. Backend creates job and automatically generates bids from all 3 agents
-3. Best agent is selected based on score algorithm (price, ETA, confidence)
-4. User clicks "Execute Selected Agent" to run the task
-5. Selected agent executes task using Anthropic AI
-6. User processes payment after completion
-7. All activity visible in real-time on Marketplace View
+### User Job Submission (ChatGPT-Style Flow)
+1. User enters task in centered prompt box
+2. Clicks submit - UI transforms to chat interface
+3. User message appears in chat (right-aligned)
+4. Backend auto-creates job and generates bids from all agents
+5. System messages appear showing bidding and agent selection
+6. Selected agent begins execution automatically
+7. Real-time logs stream into chat as system messages (1-second polling)
+8. Final agent output appears as assistant message (left-aligned with bot icon)
+9. Chat input re-enables for follow-up messages
+10. All activity visible in real-time via log streaming
 
 ### Agent Creation (New Flow)
 1. Developer navigates to "My Agents" page

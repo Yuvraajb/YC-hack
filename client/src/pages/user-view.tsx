@@ -51,7 +51,8 @@ export default function UserView() {
     const pollLogs = async () => {
       try {
         const response = await fetch(`/api/jobs/${currentJobId}`);
-        const job = await response.json();
+        const data = await response.json();
+        const job = data.job; // Extract job from response object
 
         // Fetch logs
         const logsResponse = await fetch(`/api/jobs/${currentJobId}/logs`);
