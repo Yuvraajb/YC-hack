@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ledger } from "./ledger";
 import { breakdownResearchRequest, evaluateBids, verifyWork } from "./anthropic";
+import { locusPayment } from "./locus-payment";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -150,6 +151,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Job not ready for verification" });
       }
 
+      // Check if user payment is required and not paid yet
+      if (job.paymentStatus === "pending") {
+        return res.status(402).json({ 
+          error: "Payment required before releasing funds to agent",
+          paymentRequired: job.paymentRequired,
+          locusAmount: job.locusAmount,
+        });
+      }
+
       // Use Claude AI to verify work
       const verification = await verifyWork(
         job.description,
@@ -189,6 +199,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Confirm user payment
+  app.post("/api/jobs/:id/confirm-payment", async (req, res) => {
+    try {
+      const { txHash } = req.body;
+      const job = await storage.getJob(req.params.id);
+
+      if (!job) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      if (job.paymentStatus !== "pending") {
+        return res.status(400).json({ error: "Payment not required or already paid" });
+      }
+
+      // Verify the transaction on blockchain
+      const paymentResult = await locusPayment.receivePayment(txHash);
+
+      if (!paymentResult.success) {
+        return res.status(400).json({ error: paymentResult.error });
+      }
+
+      // Update job payment status
+      await storage.updateJobPayment(job.id, {
+        paymentStatus: "paid",
+        paymentTxHash: txHash,
+        locusAmount: paymentResult.amount,
+      });
+
+      res.json({
+        success: true,
+        message: "Payment confirmed",
+        amount: paymentResult.amount,
+        from: paymentResult.from,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Get payment status
+  app.get("/api/payment/status", async (req, res) => {
+    try {
+      const balance = await locusPayment.getOwnerBalance();
+      const usdRate = await locusPayment.getUsdToLocusRate();
+      
+      res.json({
+        ownerBalance: balance,
+        locusUsdRate: usdRate,
+        ownerAddress: process.env.LOCUS_OWNER_KEY,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Get all transactions
   app.get("/api/transactions", async (req, res) => {
     try {
@@ -202,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Research request endpoint (initiates the full workflow)
   app.post("/api/research", async (req, res) => {
     try {
-      const { request } = req.body;
+      const { request, userWallet } = req.body;
 
       if (!request) {
         return res.status(400).json({ error: "Research request required" });
@@ -210,6 +275,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Use Claude AI to break down request into tasks
       const breakdown = await breakdownResearchRequest(request);
+
+      // Calculate total cost
+      const totalCost = breakdown.tasks.reduce((sum, task) => sum + task.budgetMax, 0);
 
       // Create jobs for each task
       const jobs = [];
@@ -221,14 +289,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           budgetMax: task.budgetMax.toFixed(2),
           postedBy: "coordinator-agent",
           status: "accepting_bids",
+          userWallet: userWallet || null,
+          paymentRequired: userWallet ? task.budgetMax.toFixed(2) : null,
+          paymentStatus: userWallet ? "pending" : "not_required",
         });
         jobs.push(job);
+      }
+
+      // If user wallet provided, calculate LOCUS amount
+      let paymentInfo = null;
+      if (userWallet) {
+        const locusAmount = await locusPayment.convertUsdToLocus(totalCost);
+        paymentInfo = {
+          totalUsd: totalCost.toFixed(2),
+          locusAmount,
+          userWallet,
+        };
       }
 
       res.json({
         success: true,
         breakdown,
         jobs,
+        paymentInfo,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

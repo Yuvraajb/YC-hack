@@ -32,6 +32,7 @@ export interface IStorage {
   setJobEscrow(jobId: string, escrowId: string): Promise<void>;
   submitJobWork(jobId: string, submission: { results: any; submittedAt: string }): Promise<void>;
   completeJob(jobId: string): Promise<void>;
+  updateJobPayment(jobId: string, payment: { paymentStatus: string; paymentTxHash?: string; locusAmount?: string }): Promise<void>;
 
   getBid(id: string): Promise<Bid | undefined>;
   getBidsByJob(jobId: string): Promise<Bid[]>;
@@ -65,7 +66,7 @@ export class DbStorage implements IStorage {
         reputationScore: "0.00",
         jobsCompleted: "0",
         totalEarned: "0.00",
-        status: insertAgent.status || "available",
+        status: (insertAgent.status || "available") as AgentStatus,
       })
       .returning();
     return result[0];
@@ -116,7 +117,7 @@ export class DbStorage implements IStorage {
       .values({
         ...insertJob,
         id,
-        status: "accepting_bids",
+        status: "accepting_bids" as JobStatus,
         acceptedBid: null,
         escrowId: null,
         submission: null,
@@ -163,6 +164,20 @@ export class DbStorage implements IStorage {
       .where(eq(jobs.id, jobId));
   }
 
+  async updateJobPayment(
+    jobId: string,
+    payment: { paymentStatus: string; paymentTxHash?: string; locusAmount?: string }
+  ): Promise<void> {
+    await db
+      .update(jobs)
+      .set({
+        paymentStatus: payment.paymentStatus as any,
+        paymentTxHash: payment.paymentTxHash,
+        locusAmount: payment.locusAmount,
+      })
+      .where(eq(jobs.id, jobId));
+  }
+
   async getBid(id: string): Promise<Bid | undefined> {
     const result = await db.select().from(bids).where(eq(bids.id, id));
     return result[0];
@@ -200,7 +215,7 @@ export class DbStorage implements IStorage {
       .values({
         ...insertTransaction,
         id,
-        status: "completed",
+        status: "completed" as string,
       })
       .returning();
     return result[0];
