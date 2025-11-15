@@ -1,0 +1,83 @@
+Build a polished full-stack web app called **Agentic Marketplace**.
+
+Goal: A simple user interface (one prompt box) that triggers a behind-the-scenes multi-agent marketplace. The user only sees a minimal input; developers can open the "Marketplace View" to see all internal agent activity such as bidding, job scheduling, execution, and simulated payments.
+
+-------------------------------
+🔥 Core Requirements
+-------------------------------
+
+Frontend:
+- Next.js + Tailwind
+- Two main views:
+
+1) **User View (default):**
+   - Centered prompt box
+   - User types a task → "Create Job"
+   - Show final chosen agent + final output + payment receipt
+
+2) **Marketplace View (admin/developer view):**
+   - Live dashboard showing:
+      • Active jobs  
+      • Agents bidding (cards with ETA, confidence, price)  
+      • Selected agent highlighted  
+      • Job execution logs  
+      • Simulated payment events (txId, amount)  
+   - Clean, modern UI (dark mode, rounded cards, subtle borders)
+
+-------------------------------
+🤖 Backend (lightweight)
+-------------------------------
+
+Build a simple Node.js + Express backend with:
+- `POST /jobs` → create job
+- `POST /jobs/:id/bids` → 3 predefined agents generate JSON bids
+- `POST /jobs/:id/select` → pick best bid via score formula
+- `POST /jobs/:id/execute` → run the winning agent via Anthropic SDK
+- `GET /jobs/:id` → return full job object
+
+Agents (3):
+- Fast & Cheap
+- High Quality
+- Balanced
+
+Each agent has:
+- name
+- systemPrompt
+- bidding behavior → JSON: { eta, price, confidence, plan }
+
+-------------------------------
+💸 Payment Simulation
+-------------------------------
+Implement simple function:
+payAgent(jobId, agentId, amount) → return { status, txId, amount }
+
+Show payments visually in the Marketplace View.
+
+-------------------------------
+🎨 UI Style
+-------------------------------
+- Dark theme with neon accents
+- Elegant cards:
+   - Agent cards (with dynamic bid values)
+   - Job timeline
+   - Payment card
+- Smooth transitions
+- Clear separation between **User View** and **Marketplace View**
+- Think: Vercel Dashboard + OpenAI Playground + Fiverr bidding
+
+-------------------------------
+🎯 What to Generate
+-------------------------------
+Generate:
+- Full Next.js UI
+- Tailwind styling
+- Marketplace dashboard components
+- Backend endpoints
+- Agent bidding logic
+- Job selection + execution logic
+- Payment simulation
+- README instructions
+
+Keep code clean and minimal, but UI beautiful and functional.
+
+End of prompt.
