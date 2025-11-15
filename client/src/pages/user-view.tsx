@@ -27,6 +27,8 @@ export default function UserView() {
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const displayedLogKeysRef = useRef<Set<string>>(new Set());
+  const hasShownOutputRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,27 +57,34 @@ export default function UserView() {
         const logsResponse = await fetch(`/api/jobs/${currentJobId}/logs`);
         const logs: ExecutionLog[] = await logsResponse.json();
 
-        // Update messages with logs
-        if (logs.length > 0) {
-          const lastLog = logs[logs.length - 1];
+        // Filter out logs we've already displayed using stable identifiers
+        const newLogMessages: Message[] = [];
+        
+        for (const log of logs) {
+          // Create stable key using only intrinsic properties (timestamp + message)
+          // This ensures the key stays the same even if logs are reordered or truncated
+          const logKey = `${log.timestamp}-${log.message}`;
           
-          setMessages(prev => {
-            // Check if we already have this log
-            const hasLog = prev.some(m => m.content.includes(lastLog.message));
-            if (!hasLog) {
-              return [...prev, {
-                id: `log-${Date.now()}`,
-                type: 'system',
-                content: lastLog.message,
-                timestamp: new Date()
-              }];
-            }
-            return prev;
-          });
+          if (!displayedLogKeysRef.current.has(logKey)) {
+            displayedLogKeysRef.current.add(logKey);
+            newLogMessages.push({
+              id: `log-${logKey}`,
+              type: 'system',
+              content: log.message,
+              timestamp: new Date()
+            });
+          }
         }
 
-        // Check if job is complete
-        if (job.output && job.status === 'completed') {
+        // Append all new logs in a single update
+        if (newLogMessages.length > 0) {
+          setMessages(prev => [...prev, ...newLogMessages]);
+        }
+
+        // Check if job is complete and show output once
+        if (job.output && job.status === 'completed' && !hasShownOutputRef.current) {
+          hasShownOutputRef.current = true;
+          
           setMessages(prev => [...prev, {
             id: `output-${Date.now()}`,
             type: 'assistant',
@@ -129,6 +138,10 @@ export default function UserView() {
     const currentPrompt = prompt;
     setPrompt("");
     setIsExecuting(true);
+    
+    // Reset tracking refs for new job
+    displayedLogKeysRef.current.clear();
+    hasShownOutputRef.current = false;
 
     try {
       // Create job
