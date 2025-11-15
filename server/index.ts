@@ -114,50 +114,56 @@ app.use((req, res, next) => {
 
 async function initializeAgents() {
   try {
-    // Create coordinator agent with starting balance
-    await storage.createAgent({
-      name: "Coordinator Agent",
-      type: "coordinator",
-      walletBalance: "50.00",
-      status: "available",
-      pricingModel: null,
-    });
+    const existingAgents = await storage.getAllAgents();
+    
+    if (existingAgents.length === 0) {
+      // Create coordinator agent with starting balance
+      await storage.createAgent({
+        name: "Coordinator Agent",
+        type: "coordinator",
+        walletBalance: "50.00",
+        status: "available",
+        pricingModel: null,
+      });
 
-    // Create specialist agents (start with $0)
-    await storage.createAgent({
-      name: "Web Scraper Agent",
-      type: "web_scraper",
-      walletBalance: "0.00",
-      status: "available",
-      pricingModel: {
-        baseRate: 1.0,
-        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-      },
-    });
+      // Create specialist agents (start with $0)
+      await storage.createAgent({
+        name: "Web Scraper Agent",
+        type: "web_scraper",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.0,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
 
-    await storage.createAgent({
-      name: "Analysis Agent",
-      type: "analysis",
-      walletBalance: "0.00",
-      status: "available",
-      pricingModel: {
-        baseRate: 1.5,
-        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-      },
-    });
+      await storage.createAgent({
+        name: "Analysis Agent",
+        type: "analysis",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.5,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
 
-    await storage.createAgent({
-      name: "Writer Agent",
-      type: "writer",
-      walletBalance: "0.00",
-      status: "available",
-      pricingModel: {
-        baseRate: 1.2,
-        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
-      },
-    });
+      await storage.createAgent({
+        name: "Writer Agent",
+        type: "writer",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.2,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
 
-    log("✓ Agents initialized in marketplace");
+      log("✓ Agents initialized in marketplace");
+    } else {
+      log(`✓ Agents already exist in database (${existingAgents.length} agents)`);
+    }
   } catch (error: any) {
     log(`Error initializing agents: ${error.message}`);
   }
