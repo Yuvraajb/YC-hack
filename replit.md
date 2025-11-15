@@ -11,26 +11,37 @@ A polished full-stack web application where users submit tasks through a simple 
   - Connected frontend to backend with real API calls
   - Fixed Anthropic integration to use Replit AI Integrations with proper environment variables
   - Added error handling and validation for AI execution
+  - **Extended with Marketplace & Agent Builder**:
+    - Created General Marketplace page for browsing developer-created agents
+    - Built "My Agents" page with agent management and creation dialog
+    - Implemented dual-path agent creation: AI-assisted builder vs custom code editor
+    - Added negotiation strategy system (aggressive, balanced, conservative)
+    - Seeded 6 diverse demo agents across categories
 
 ## Project Architecture
 
 ### Frontend
 - **User View** (`/`): Simple interface for users to submit tasks and view job status
 - **Marketplace View** (`/marketplace`): Developer dashboard showing active jobs, agent bids, execution logs, and payment history
+- **Browse Agents** (`/agents`): General marketplace for browsing all published agents with search, filtering, and sorting
+- **My Agents** (`/my-agents`): Developer workspace for managing created agents
+- **AI Builder** (`/builder/ai`): Visual form-based agent builder with auto-generated Claude Agent SDK code
+- **Custom Code Builder** (`/builder/code`): Advanced editor for developers with existing Claude SDK code
 
 ### Backend
-- **Storage**: In-memory storage (MemStorage) for jobs, bids, payments, and logs
+- **Storage**: In-memory storage (MemStorage) for jobs, bids, payments, logs, developers, marketplace agents, reviews, negotiations
 - **Agents**: Three predefined AI agents with distinct bidding behaviors
   - Fast & Cheap (FastCoder): Low price, fast execution, moderate confidence
   - High Quality (QualityFirst): Higher price, thorough execution, high confidence
   - Balanced (SmartBalance): Balanced approach across all factors
 - **API Routes**:
-  - `POST /api/jobs`: Create a new job and trigger automated bidding
-  - `GET /api/jobs`: List all jobs
-  - `GET /api/jobs/:id`: Get job details with bids and logs
-  - `POST /api/jobs/:id/execute`: Execute the selected agent's task
-  - `POST /api/jobs/:id/payment`: Process payment for completed job
-  - `GET /api/payments`: List all payments
+  - Job Management: `POST /api/jobs`, `GET /api/jobs`, `GET /api/jobs/:id`, `POST /api/jobs/:id/execute`, `POST /api/jobs/:id/payment`
+  - Marketplace: `GET /api/marketplace/agents`, `GET /api/payments`
+  - Developer Agents: `GET /api/dev/agents`, `POST /api/dev/agents`, `PATCH /api/dev/agents/:id`, `DELETE /api/dev/agents/:id`
+- **Negotiation Strategies**: 
+  - Aggressive: High starting price, minimal concessions
+  - Balanced: Fair pricing, moderate flexibility
+  - Conservative: Competitive pricing, quick to close deals
 
 ### AI Integration
 - Uses Replit AI Integrations for Anthropic access (no API key needed)
@@ -46,7 +57,9 @@ A polished full-stack web application where users submit tasks through a simple 
 - Storage: In-memory (MemStorage)
 - AI: Anthropic SDK with Replit AI Integrations
 
-## Workflow
+## Workflows
+
+### User Job Submission (Original Flow)
 1. User submits task via User View
 2. Backend creates job and automatically generates bids from all 3 agents
 3. Best agent is selected based on score algorithm (price, ETA, confidence)
@@ -54,6 +67,16 @@ A polished full-stack web application where users submit tasks through a simple 
 5. Selected agent executes task using Anthropic AI
 6. User processes payment after completion
 7. All activity visible in real-time on Marketplace View
+
+### Agent Creation (New Flow)
+1. Developer navigates to "My Agents" page
+2. Clicks "Create Agent" button
+3. Chooses creation method in dialog:
+   - **Build with AI**: Visual builder with auto-generated SDK code (for beginners)
+   - **Use Custom Code**: Direct code editor with negotiation settings (for veterans)
+4. Fills in agent configuration (pricing, capabilities, tools, system prompt, negotiation strategy)
+5. Creates agent (saved as draft)
+6. Publishes to marketplace for users to hire
 
 ## User Preferences
 - Design: Dark theme with purple neon accents (#9333ea primary color)
