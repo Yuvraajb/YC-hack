@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertJobSchema, insertBidSchema, insertPaymentSchema, insertLogSchema } from "@shared/schema";
+import { insertJobSchema, insertBidSchema, insertPaymentSchema, insertLogSchema, insertMarketplaceAgentSchema, insertDeveloperSchema } from "@shared/schema";
 import { agents, generateBid, calculateBidScore, getAgentById } from "./agents";
 import Anthropic from "@anthropic-ai/sdk";
 import { randomUUID } from "crypto";
@@ -283,6 +283,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(payments);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Marketplace Agent Routes
+  app.get("/api/marketplace/agents", async (req, res) => {
+    try {
+      const agents = await storage.getPublishedMarketplaceAgents();
+      res.json(agents);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/marketplace/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = await storage.getMarketplaceAgent(id);
+      
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      const reviews = await storage.getReviewsByAgent(id);
+      res.json({ agent, reviews });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Developer Routes - Agent Creation & Management
+  app.post("/api/dev/agents", async (req, res) => {
+    try {
+      const data = insertMarketplaceAgentSchema.parse(req.body);
+      const agent = await storage.createMarketplaceAgent({
+        ...data,
+        status: "draft",
+      });
+      res.json(agent);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/dev/agents", async (req, res) => {
+    try {
+      const { developerId } = req.query;
+      const agents = developerId 
+        ? await storage.getAgentsByDeveloper(developerId as string)
+        : await storage.getAllMarketplaceAgents();
+      res.json(agents);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.put("/api/dev/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const agent = await storage.updateMarketplaceAgent(id, updates);
+      
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      res.json(agent);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/dev/agents/:id/publish", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agent = await storage.updateMarketplaceAgent(id, { status: "published" });
+      
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      res.json(agent);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.delete("/api/dev/agents/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = await storage.deleteMarketplaceAgent(id);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Agent not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Developer profile routes
+  app.post("/api/dev/profile", async (req, res) => {
+    try {
+      const data = insertDeveloperSchema.parse(req.body);
+      const developer = await storage.createDeveloper(data);
+      res.json(developer);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   });
 

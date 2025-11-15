@@ -314,3 +314,109 @@ export class MemStorage implements IStorage {
 }
 
 export const storage = new MemStorage();
+
+// Seed demo agents
+async function seedDemoAgents() {
+  // Create demo developer
+  const demoDev = await storage.createDeveloper({
+    name: "Demo Developer",
+    email: "demo@marketplace.com",
+  });
+
+  // Seed marketplace agents
+  const agents = [
+    {
+      developerId: demoDev.id,
+      name: "CodeMaster Pro",
+      description: "Expert coding assistant specialized in full-stack development with React, Node.js, and Python. Handles complex refactoring, debugging, and architecture design.",
+      category: "Coding",
+      systemPrompt: "You are CodeMaster Pro, an expert software engineer with 10+ years of experience. You write clean, maintainable code following best practices. You excel at debugging, refactoring, and explaining complex concepts.",
+      minPrice: 8,
+      maxPrice: 25,
+      basePrice: 15,
+      capabilities: ["Code Generation", "Problem Solving", "Task Automation"],
+      toolsEnabled: ["File Operations", "Code Execution", "Web Search"],
+      tags: ["React", "Node.js", "Python", "Full-Stack"],
+      status: "published",
+    },
+    {
+      developerId: demoDev.id,
+      name: "DataWiz Analyst",
+      description: "Advanced data analysis agent with expertise in statistics, machine learning, and visualization. Perfect for insights extraction and predictive modeling.",
+      category: "Data Analysis",
+      systemPrompt: "You are DataWiz, a data scientist specializing in statistical analysis and machine learning. You excel at finding patterns, creating visualizations, and providing actionable insights from data.",
+      minPrice: 12,
+      maxPrice: 30,
+      basePrice: 20,
+      capabilities: ["Data Analysis", "Natural Language Processing", "Research & Summarization"],
+      toolsEnabled: ["Data Visualization", "Code Execution", "File Operations"],
+      tags: ["Statistics", "ML", "Visualization", "Python"],
+      status: "published",
+    },
+    {
+      developerId: demoDev.id,
+      name: "ContentCraft Writer",
+      description: "Creative writing specialist for blogs, marketing copy, and technical documentation. Adapts tone and style to your brand voice.",
+      category: "Writing",
+      systemPrompt: "You are ContentCraft, a professional writer with expertise in various writing styles. You create engaging, well-researched content that resonates with target audiences.",
+      minPrice: 5,
+      maxPrice: 18,
+      basePrice: 10,
+      capabilities: ["Creative Writing", "Research & Summarization", "Natural Language Processing"],
+      toolsEnabled: ["Web Search", "File Operations"],
+      tags: ["Copywriting", "Blogs", "Marketing", "SEO"],
+      status: "published",
+    },
+    {
+      developerId: demoDev.id,
+      name: "ResearchBot Scholar",
+      description: "Academic research assistant that finds, analyzes, and summarizes scientific papers and technical documents with citations.",
+      category: "Research",
+      systemPrompt: "You are ResearchBot Scholar, an academic research assistant. You excel at finding relevant sources, synthesizing information, and providing well-cited summaries.",
+      minPrice: 10,
+      maxPrice: 28,
+      basePrice: 18,
+      capabilities: ["Research & Summarization", "Natural Language Processing", "Problem Solving"],
+      toolsEnabled: ["Web Search", "File Operations"],
+      tags: ["Academic", "Citations", "Analysis", "Summarization"],
+      status: "published",
+    },
+    {
+      developerId: demoDev.id,
+      name: "SupportGenius AI",
+      description: "Customer support specialist trained on handling tickets, troubleshooting, and providing empathetic, solution-focused responses.",
+      category: "Customer Support",
+      systemPrompt: "You are SupportGenius, a customer support expert. You provide helpful, empathetic responses to customer inquiries, troubleshoot issues, and ensure customer satisfaction.",
+      minPrice: 4,
+      maxPrice: 15,
+      basePrice: 8,
+      capabilities: ["Natural Language Processing", "Problem Solving", "Task Automation"],
+      toolsEnabled: ["Web Search", "API Calls", "File Operations"],
+      tags: ["Support", "Troubleshooting", "Customer Service"],
+      status: "published",
+    },
+    {
+      developerId: demoDev.id,
+      name: "DesignFlow Creative",
+      description: "Creative design assistant for brainstorming, mood boards, and design system documentation. Specialized in UI/UX concepts.",
+      category: "Creative",
+      systemPrompt: "You are DesignFlow, a creative design expert with a focus on UI/UX. You excel at generating creative concepts, design systems, and user experience recommendations.",
+      minPrice: 7,
+      maxPrice: 22,
+      basePrice: 12,
+      capabilities: ["Creative Writing", "Problem Solving", "Research & Summarization"],
+      toolsEnabled: ["Image Generation", "Web Search", "File Operations"],
+      tags: ["UI/UX", "Design Systems", "Creative", "Branding"],
+      status: "published",
+    },
+  ];
+
+  for (const agent of agents) {
+    await storage.createMarketplaceAgent(agent);
+  }
+
+  console.log(`Seeded ${agents.length} demo marketplace agents`);
+}
+
+// Seed on initialization
+seedDemoAgents().catch(console.error);
