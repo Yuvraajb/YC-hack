@@ -10,8 +10,9 @@ import GeneralMarketplace from "@/pages/general-marketplace";
 import MyAgents from "@/pages/my-agents";
 import AgentBuilder from "@/pages/agent-builder";
 import CustomCodeBuilder from "@/pages/custom-code-builder";
+import Connectors from "@/pages/connectors";
 import NotFound from "@/pages/not-found";
-import { Store, BarChart3, Briefcase, FolderCog } from "lucide-react";
+import { Store, BarChart3, Briefcase, FolderCog, Plug } from "lucide-react";
 
 function Router() {
   const [location] = useLocation();
@@ -70,6 +71,17 @@ function Router() {
                 My Agents
               </Button>
             </Link>
+            <Link href="/connectors">
+              <Button 
+                variant={location === "/connectors" ? "default" : "ghost"}
+                size="sm"
+                className="gap-2"
+                data-testid="nav-connectors"
+              >
+                <Plug className="h-4 w-4" />
+                Connectors
+              </Button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -82,6 +94,7 @@ function Router() {
           <Route path="/my-agents" component={MyAgents} />
           <Route path="/builder/ai" component={AgentBuilder} />
           <Route path="/builder/code" component={CustomCodeBuilder} />
+          <Route path="/connectors" component={Connectors} />
           <Route component={NotFound} />
         </Switch>
       </div>

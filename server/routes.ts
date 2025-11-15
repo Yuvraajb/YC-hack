@@ -396,6 +396,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Connector routes
+  app.get("/api/connectors/status", async (req, res) => {
+    try {
+      const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+      const xReplitToken = process.env.REPL_IDENTITY 
+        ? 'repl ' + process.env.REPL_IDENTITY 
+        : process.env.WEB_REPL_RENEWAL 
+        ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+        : null;
+
+      if (!xReplitToken || !hostname) {
+        return res.json({
+          'google-mail': false,
+          'google-calendar': false
+        });
+      }
+
+      // Check Gmail connection
+      let gmailConnected = false;
+      try {
+        const gmailResponse = await fetch(
+          'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-mail',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'X_REPLIT_TOKEN': xReplitToken
+            }
+          }
+        );
+        const gmailData = await gmailResponse.json();
+        const gmailConnection = gmailData.items?.[0];
+        gmailConnected = !!(gmailConnection?.settings?.access_token || gmailConnection?.settings?.oauth?.credentials?.access_token);
+      } catch (error) {
+        console.error('Error checking Gmail status:', error);
+      }
+
+      // Check Calendar connection
+      let calendarConnected = false;
+      try {
+        const calendarResponse = await fetch(
+          'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-calendar',
+          {
+            headers: {
+              'Accept': 'application/json',
+              'X_REPLIT_TOKEN': xReplitToken
+            }
+          }
+        );
+        const calendarData = await calendarResponse.json();
+        const calendarConnection = calendarData.items?.[0];
+        calendarConnected = !!(calendarConnection?.settings?.access_token || calendarConnection?.settings?.oauth?.credentials?.access_token);
+      } catch (error) {
+        console.error('Error checking Calendar status:', error);
+      }
+
+      res.json({
+        'google-mail': gmailConnected,
+        'google-calendar': calendarConnected
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/connectors/:id/authorize", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Map connector ID to Replit connector name
+      const connectorMap: Record<string, string> = {
+        'google-mail': 'google-mail',
+        'google-calendar': 'google-calendar'
+      };
+
+      const connectorName = connectorMap[id];
+      if (!connectorName) {
+        return res.status(400).json({ error: 'Unknown connector' });
+      }
+
+      // For Replit connectors, we need to direct users to the Replit Connectors UI
+      // Since we can't programmatically trigger OAuth, provide instructions
+      res.json({
+        authUrl: null,
+        message: 'Please authorize this connector through the Replit Connectors panel',
+        instructions: [
+          '1. Open the Connectors panel in your Replit workspace',
+          `2. Find "${id.replace('-', ' ')}" and click Connect`,
+          '3. Sign in with your Google account',
+          '4. Return to this page and refresh'
+        ]
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
