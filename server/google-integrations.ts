@@ -154,10 +154,28 @@ export const readGmailTool = tool(
         }]
       };
     } catch (error: any) {
+      // Check for insufficient permissions error
+      const errorMsg = error.message || '';
+      if (error.code === 403 || errorMsg.includes('insufficient') || errorMsg.includes('scope') || errorMsg.includes('permission')) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: `❌ Gmail Read Permission Not Available\n\n` +
+                  `The Replit Gmail connector is missing the "gmail.readonly" OAuth scope needed to read your emails.\n\n` +
+                  `How to fix:\n` +
+                  `1. Contact Replit support at replit.com/support\n` +
+                  `2. Request they add the "gmail.readonly" scope to the Gmail connector\n` +
+                  `3. Once updated, reconnect your Gmail account in the Connectors panel\n\n` +
+                  `In the meantime, you can manually check your emails at gmail.com\n\n` +
+                  `Technical details: ${errorMsg}`
+          }]
+        };
+      }
+      
       return {
         content: [{
           type: "text" as const,
-          text: `Error reading Gmail: ${error.message}`
+          text: `Error reading Gmail: ${errorMsg}`
         }]
       };
     }

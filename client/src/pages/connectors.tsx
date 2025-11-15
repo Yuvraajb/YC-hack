@@ -32,7 +32,7 @@ const CONNECTOR_DEFINITIONS: ConnectorDefinition[] = [
     category: 'communication',
     usedByAgents: ['Personal Assistant AI'],
     permissions: ['Read email metadata', 'Send emails', 'Manage labels'],
-    note: 'Note: Full email reading requires re-authorization in Replit with gmail.readonly scope'
+    note: '⚠️ Important: Gmail connector is missing the "gmail.readonly" scope needed to read inbox emails. Contact Replit support at replit.com/support to request this scope be added. Currently limited to sending emails and managing labels only.'
   },
   {
     id: 'google-calendar',
