@@ -50,6 +50,11 @@ export const jobs = pgTable("jobs", {
     results: any;
     submittedAt: string;
   }>(),
+  userWallet: text("user_wallet"),
+  paymentRequired: decimal("payment_required", { precision: 10, scale: 2 }),
+  paymentStatus: text("payment_status").$type<"pending" | "paid" | "not_required">().default("not_required"),
+  paymentTxHash: text("payment_tx_hash"),
+  locusAmount: text("locus_amount"),
   postedAt: timestamp("posted_at").notNull().default(sql`now()`),
   completedAt: timestamp("completed_at"),
 });
