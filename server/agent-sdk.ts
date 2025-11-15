@@ -14,33 +14,287 @@ function formatTimestamp(): string {
   });
 }
 
-// Image generation tool using placeholders
-// In production, integrate with DALL-E, Stable Diffusion, or Midjourney
-const generateImageTool = tool(
-  "generate_image",
-  "Generate an image based on a text description. Returns a placeholder confirmation since actual image generation requires external APIs like DALL-E or Stable Diffusion.",
-  {
-    description: z.string().describe("Detailed description of the image to generate"),
-    aspect_ratio: z.string().optional().describe("Aspect ratio (1:1, 16:9, 9:16, etc), defaults to 1:1")
-  },
-  async (args) => {
-    const aspectRatio = args.aspect_ratio || "1:1";
+// OpenRouter API client with retry logic and rate limiting
+class OpenRouterClient {
+  private apiKey: string;
+  private baseURL = "https://openrouter.ai/api/v1";
+  private maxRetries = 3;
+  private retryDelay = 1000; // ms
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async fetchWithRetry(url: string, options: RequestInit, attempt = 1): Promise<Response> {
+    try {
+      const response = await fetch(url, options);
+      
+      // Handle rate limiting (429)
+      if (response.status === 429 && attempt < this.maxRetries) {
+        const retryAfter = parseInt(response.headers.get('retry-after') || '1') * 1000;
+        const delay = Math.max(retryAfter, this.retryDelay * Math.pow(2, attempt - 1));
+        await this.sleep(delay);
+        return this.fetchWithRetry(url, options, attempt + 1);
+      }
+      
+      // Handle server errors (5xx) with retry
+      if (response.status >= 500 && response.status < 600 && attempt < this.maxRetries) {
+        const delay = this.retryDelay * Math.pow(2, attempt - 1);
+        await this.sleep(delay);
+        return this.fetchWithRetry(url, options, attempt + 1);
+      }
+      
+      return response;
+    } catch (error) {
+      if (attempt < this.maxRetries) {
+        await this.sleep(this.retryDelay * Math.pow(2, attempt - 1));
+        return this.fetchWithRetry(url, options, attempt + 1);
+      }
+      throw error;
+    }
+  }
+
+  async callModel(params: {
+    model: string;
+    messages: Array<{ role: string; content: string }>;
+    max_tokens?: number;
+    temperature?: number;
+  }): Promise<{ content: string; tokens?: { prompt: number; completion: number; total: number }; generationId?: string }> {
+    const response = await this.fetchWithRetry(`${this.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+        'HTTP-Referer': 'https://replit.com',
+        'X-Title': 'Agentic Marketplace'
+      },
+      body: JSON.stringify({
+        model: params.model,
+        messages: params.messages,
+        max_tokens: params.max_tokens || 1024,
+        temperature: params.temperature || 0.7,
+        usage: { include: true }  // Enable token tracking
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    const usage = data.usage;
     
     return {
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify({
-            status: "success",
-            message: "Image generation requested",
-            description: args.description,
-            aspect_ratio: aspectRatio,
-            placeholder_url: `https://via.placeholder.com/800x800.png?text=${encodeURIComponent(args.description.slice(0, 50))}`,
-            note: "In production, this would integrate with DALL-E, Stable Diffusion, or Midjourney API"
-          }, null, 2)
-        }
-      ]
+      content: data.choices?.[0]?.message?.content || "",
+      tokens: usage ? {
+        prompt: usage.prompt_tokens || 0,
+        completion: usage.completion_tokens || 0,
+        total: usage.total_tokens || 0
+      } : undefined,
+      generationId: data.id
     };
+  }
+
+  async generateImage(params: {
+    prompt: string;
+    model?: string;
+    aspect_ratio?: string;
+  }): Promise<{ url: string; generationId?: string }> {
+    // Use a supported image generation model
+    const model = params.model || "black-forest-labs/flux-1.1-pro";
+    
+    const response = await this.fetchWithRetry(`${this.baseURL}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`,
+        'HTTP-Referer': 'https://replit.com',
+        'X-Title': 'Agentic Marketplace'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "user",
+            content: params.prompt
+          }
+        ],
+        modalities: ["text", "image"]  // Required for image generation
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter image generation error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract image from OpenRouter response
+    // Per official docs: message.images[].image_url.url contains base64 data URL
+    const message = data.choices?.[0]?.message;
+    
+    if (!message?.images || !Array.isArray(message.images) || message.images.length === 0) {
+      throw new Error("No images returned from OpenRouter. Response: " + JSON.stringify(data).slice(0, 500));
+    }
+    
+    const imageUrl = message.images[0]?.image_url?.url;
+    
+    if (!imageUrl) {
+      throw new Error("Image URL missing from response. Response: " + JSON.stringify(message.images[0]).slice(0, 500));
+    }
+    
+    return {
+      url: imageUrl, // Base64 data URL (data:image/png;base64,...)
+      generationId: data.id  // For cost lookup at openrouter.ai/activity
+    };
+  }
+}
+
+// Initialize OpenRouter client (lazy)
+let openRouterClient: OpenRouterClient | null = null;
+
+function getOpenRouterClient(): OpenRouterClient {
+  if (!openRouterClient) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY not configured");
+    }
+    openRouterClient = new OpenRouterClient(apiKey);
+  }
+  return openRouterClient;
+}
+
+// MCP Tool: Generic OpenRouter model caller
+const callOpenRouterModelTool = tool(
+  "call_openrouter_model",
+  "Call any AI model via OpenRouter API. Supports 100+ models including GPT-4, Claude, Gemini, LLaMA, etc. Use this for specialized reasoning, analysis, or text generation tasks.",
+  {
+    model: z.string().describe("Model ID (e.g., 'openai/gpt-4', 'anthropic/claude-3-opus', 'google/gemini-pro')"),
+    prompt: z.string().describe("The prompt/question to send to the model"),
+    temperature: z.number().optional().describe("Temperature (0-1), defaults to 0.7")
+  },
+  async (args) => {
+    try {
+      const client = getOpenRouterClient();
+      const result = await client.callModel({
+        model: args.model,
+        messages: [{ role: "user", content: args.prompt }],
+        temperature: args.temperature
+      });
+
+      const tokenInfo = result.tokens 
+        ? `\n\nTokens used: ${result.tokens.total} (${result.tokens.prompt} prompt + ${result.tokens.completion} completion)`
+        : '';
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `${result.content}${tokenInfo}`
+          }
+        ]
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Error calling ${args.model}: ${error.message}`
+          }
+        ]
+      };
+    }
+  }
+);
+
+// MCP Tool: Optimized chat with structured output
+const callOpenRouterChatTool = tool(
+  "call_openrouter_chat",
+  "Call a language model with structured conversation. Best for multi-turn reasoning or when you need specific model capabilities (coding, math, multilingual, etc).",
+  {
+    model: z.string().describe("Model ID to use"),
+    system_prompt: z.string().optional().describe("System instructions for the model"),
+    user_message: z.string().describe("User message/question"),
+    max_tokens: z.number().optional().describe("Maximum tokens to generate")
+  },
+  async (args) => {
+    try {
+      const client = getOpenRouterClient();
+      const messages: Array<{ role: string; content: string }> = [];
+      
+      if (args.system_prompt) {
+        messages.push({ role: "system", content: args.system_prompt });
+      }
+      messages.push({ role: "user", content: args.user_message });
+
+      const result = await client.callModel({
+        model: args.model,
+        messages,
+        max_tokens: args.max_tokens
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: result.content
+          }
+        ]
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Error: ${error.message}`
+          }
+        ]
+      };
+    }
+  }
+);
+
+// MCP Tool: Real image generation via OpenRouter
+const generateImageTool = tool(
+  "generate_image",
+  "Generate an image based on a text description using Flux 1.1 Pro or other image models via OpenRouter. Returns the actual base64 image data URL that can be displayed in browsers.",
+  {
+    description: z.string().describe("Detailed description of the image to generate"),
+    model: z.string().optional().describe("Image model to use (default: black-forest-labs/flux-1.1-pro)")
+  },
+  async (args) => {
+    try {
+      const client = getOpenRouterClient();
+      const result = await client.generateImage({
+        prompt: args.description,
+        model: args.model
+      });
+
+      // Return in a structured format that Claude can understand
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Successfully generated image for: "${args.description}"\n\nImage URL: ${result.url}\n\nThis is a base64 data URL that can be used directly in HTML <img> tags or displayed in browsers.${result.generationId ? `\n\nGeneration ID: ${result.generationId} (for cost lookup at openrouter.ai/activity)` : ''}`
+          }
+        ]
+      };
+    } catch (error: any) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Failed to generate image: ${error.message}\n\nPrompt was: "${args.description}"`
+          }
+        ]
+      };
+    }
   }
 );
 
@@ -48,7 +302,11 @@ const generateImageTool = tool(
 const customToolsServer = createSdkMcpServer({
   name: "custom-tools",
   version: "1.0.0",
-  tools: [generateImageTool]
+  tools: [
+    callOpenRouterModelTool,
+    callOpenRouterChatTool,
+    generateImageTool
+  ]
 });
 
 export interface AgentExecutionOptions {
@@ -176,8 +434,8 @@ export async function executeAgentTask(options: AgentExecutionOptions): Promise<
             message: `Streaming completed (${fullResponse.length} characters collected)`
           });
         }
-      } else if (message.type === "message" || message.type === "assistant") {
-        // Final message with complete content (SDK can emit either "message" or "assistant" type)
+      } else if (message.type === "assistant") {
+        // Final assistant message with complete content
         const msgData = message as any;
         if (msgData.content && Array.isArray(msgData.content)) {
           for (const block of msgData.content) {

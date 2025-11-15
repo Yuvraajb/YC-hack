@@ -23,7 +23,7 @@ Keep responses concise and focused on core requirements.`,
       baseDuration: 2,
       confidenceRange: [80, 88],
     },
-    enabledTools: ["WebSearch"],
+    enabledTools: ["WebSearch", "call_openrouter_model", "call_openrouter_chat"],
   },
   {
     id: "high-quality",
@@ -37,7 +37,7 @@ You take the time needed to ensure excellence in every aspect of the deliverable
       baseDuration: 8,
       confidenceRange: [95, 99],
     },
-    enabledTools: ["WebSearch", "generate_image", "Bash"],
+    enabledTools: ["WebSearch", "generate_image", "call_openrouter_model", "call_openrouter_chat", "Bash"],
   },
   {
     id: "balanced",
@@ -51,7 +51,7 @@ You optimize for practical value and reliable results.`,
       baseDuration: 5,
       confidenceRange: [90, 94],
     },
-    enabledTools: ["WebSearch", "generate_image"],
+    enabledTools: ["WebSearch", "generate_image", "call_openrouter_model", "call_openrouter_chat"],
   },
 ];
 

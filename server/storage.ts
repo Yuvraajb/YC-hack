@@ -427,7 +427,7 @@ async function seedDemoAgents() {
       basePrice: 18,
       negotiationStrategy: "balanced",
       capabilities: ["Web Browsing", "Image Generation", "Research & Summarization", "Creative Content"],
-      toolsEnabled: ["WebSearch", "generate_image"],
+      toolsEnabled: ["WebSearch", "generate_image", "call_openrouter_model", "call_openrouter_chat"],
       tags: ["Web Research", "Visual Content", "Image Generation", "Data Extraction"],
       status: "published",
     },
