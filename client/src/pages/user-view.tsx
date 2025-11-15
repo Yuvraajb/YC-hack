@@ -7,15 +7,18 @@ import AgentBidCard, { type AgentBid } from "@/components/AgentBidCard";
 import PaymentCard, { type Payment } from "@/components/PaymentCard";
 import { Loader2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface JobResult {
+  selectedAgent: AgentBid;
+  output: string;
+  payment: Payment;
+}
 
 export default function UserView() {
   const [prompt, setPrompt] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [jobResult, setJobResult] = useState<{
-    selectedAgent: AgentBid;
-    output: string;
-    payment: Payment;
-  } | null>(null);
+  const [jobResult, setJobResult] = useState<JobResult | null>(null);
   const { toast } = useToast();
 
   const handleCreateJob = async () => {
@@ -29,37 +32,62 @@ export default function UserView() {
     }
 
     setIsSubmitting(true);
-    console.log('Creating job with prompt:', prompt);
     
-    // todo: remove mock functionality - simulate job creation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    const mockResult = {
-      selectedAgent: {
-        agentId: 'quality',
-        agentName: 'High Quality',
-        eta: '8 min',
-        price: 0.75,
-        confidence: 98,
-        plan: 'Comprehensive analysis with multiple validation passes and optimization.',
-        isWinner: true,
-      },
-      output: `# Task Completed: ${prompt}\n\nI've analyzed your requirements and implemented a comprehensive solution. The approach includes:\n\n1. **Architecture Design**: Created a scalable, maintainable structure\n2. **Implementation**: Built core functionality with best practices\n3. **Testing**: Validated all edge cases and scenarios\n4. **Optimization**: Applied performance improvements\n\nThe solution is production-ready and follows industry standards.`,
-      payment: {
-        txId: `tx_${Math.random().toString(36).substr(2, 9)}`,
-        amount: 0.75,
-        timestamp: new Date().toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }),
-        status: 'success' as const,
-      },
-    };
-    
-    setJobResult(mockResult);
-    setIsSubmitting(false);
-    setPrompt("");
+    try {
+      const jobRes = await apiRequest("POST", "/api/jobs", { prompt, status: "pending" });
+      const job = await jobRes.json();
+
+      const bidsRes = await apiRequest("POST", `/api/jobs/${job.id}/bids`);
+      await bidsRes.json();
+
+      const selectRes = await apiRequest("POST", `/api/jobs/${job.id}/select`);
+      const { selectedBid } = await selectRes.json();
+
+      const execRes = await apiRequest("POST", `/api/jobs/${job.id}/execute`);
+      const { output } = await execRes.json();
+
+      const paymentRes = await apiRequest("POST", `/api/jobs/${job.id}/payment`);
+      const payment = await paymentRes.json();
+
+      const result: JobResult = {
+        selectedAgent: {
+          agentId: selectedBid.agentId,
+          agentName: selectedBid.agentName,
+          eta: selectedBid.eta,
+          price: selectedBid.price,
+          confidence: selectedBid.confidence,
+          plan: selectedBid.plan,
+          isWinner: true,
+        },
+        output,
+        payment: {
+          txId: payment.txId,
+          amount: payment.amount,
+          timestamp: new Date(payment.createdAt).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          }),
+          status: 'success' as const,
+        },
+      };
+
+      setJobResult(result);
+      setPrompt("");
+      
+      toast({
+        title: "Success",
+        description: "Job completed successfully!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create job",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,7 +128,7 @@ export default function UserView() {
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Job...
+                    Processing...
                   </>
                 ) : (
                   'Create Job'
