@@ -81,6 +81,12 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        job: {
+          accepting: "rgb(59 130 246)",
+          progress: "rgb(245 158 11)",
+          completed: "rgb(34 197 94)",
+          failed: "rgb(239 68 68)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

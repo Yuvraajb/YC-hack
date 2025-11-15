@@ -1,8 +1,17 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { storage } from "./storage";
+import { CoordinatorAgent } from "./agents/coordinator";
+import { ScraperAgent } from "./agents/scraper";
+import { AnalystAgent } from "./agents/analyst";
 
 const app = express();
+
+// Initialize agents
+let coordinatorAgent: CoordinatorAgent;
+let scraperAgent: ScraperAgent;
+let analystAgent: AnalystAgent;
 
 declare module 'http' {
   interface IncomingMessage {
@@ -47,6 +56,9 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize marketplace agents in database
+  await initializeAgents();
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -77,5 +89,83 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+
+    // Start autonomous agents after server is ready
+    setTimeout(() => {
+      startAgents();
+    }, 1000);
+  });
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    log('SIGTERM received, stopping agents...');
+    stopAgents();
+    process.exit(0);
+  });
+
+  process.on('SIGINT', () => {
+    log('SIGINT received, stopping agents...');
+    stopAgents();
+    process.exit(0);
   });
 })();
+
+async function initializeAgents() {
+  try {
+    // Create coordinator agent with starting balance
+    await storage.createAgent({
+      name: "Coordinator Agent",
+      type: "coordinator",
+      walletBalance: "50.00",
+      status: "available",
+      pricingModel: null,
+    });
+
+    // Create specialist agents (start with $0)
+    await storage.createAgent({
+      name: "Web Scraper Agent",
+      type: "web_scraper",
+      walletBalance: "0.00",
+      status: "available",
+      pricingModel: {
+        baseRate: 1.0,
+        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+      },
+    });
+
+    await storage.createAgent({
+      name: "Analysis Agent",
+      type: "analysis",
+      walletBalance: "0.00",
+      status: "available",
+      pricingModel: {
+        baseRate: 1.5,
+        complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+      },
+    });
+
+    log("✓ Agents initialized in marketplace");
+  } catch (error: any) {
+    log(`Error initializing agents: ${error.message}`);
+  }
+}
+
+function startAgents() {
+  log("Starting autonomous agents...");
+
+  coordinatorAgent = new CoordinatorAgent();
+  scraperAgent = new ScraperAgent();
+  analystAgent = new AnalystAgent();
+
+  coordinatorAgent.start();
+  scraperAgent.start();
+  analystAgent.start();
+
+  log("✓ All agents are now autonomously operating");
+}
+
+function stopAgents() {
+  if (coordinatorAgent) coordinatorAgent.stop();
+  if (scraperAgent) scraperAgent.stop();
+  if (analystAgent) analystAgent.stop();
+}
