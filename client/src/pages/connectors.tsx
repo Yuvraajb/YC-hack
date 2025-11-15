@@ -1,74 +1,61 @@
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Calendar, CheckCircle, AlertCircle, Loader2, Plug, Shield, Info } from "lucide-react";
+import { Mail, Calendar, CheckCircle, Loader2, Plug, Shield, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
-interface Connector {
+interface ConnectorDefinition {
   id: string;
   name: string;
   description: string;
   icon: typeof Mail;
-  status: 'connected' | 'disconnected' | 'checking';
   usedByAgents: string[];
   permissions: string[];
 }
 
+const CONNECTOR_DEFINITIONS: ConnectorDefinition[] = [
+  {
+    id: 'google-mail',
+    name: 'Gmail',
+    description: 'Read and manage your Gmail messages',
+    icon: Mail,
+    usedByAgents: ['Personal Assistant AI'],
+    permissions: [
+      'Read emails',
+      'Send emails',
+      'Manage labels'
+    ]
+  },
+  {
+    id: 'google-calendar',
+    name: 'Google Calendar',
+    description: 'Access and manage your calendar events',
+    icon: Calendar,
+    usedByAgents: ['Personal Assistant AI'],
+    permissions: [
+      'Read events',
+      'Create events',
+      'Manage calendars'
+    ]
+  }
+];
+
 export default function Connectors() {
-  const [connectors, setConnectors] = useState<Connector[]>([
-    {
-      id: 'google-mail',
-      name: 'Gmail',
-      description: 'Read and manage your Gmail messages',
-      icon: Mail,
-      status: 'checking',
-      usedByAgents: ['Personal Assistant AI'],
-      permissions: [
-        'Read emails',
-        'Send emails',
-        'Manage labels'
-      ]
-    },
-    {
-      id: 'google-calendar',
-      name: 'Google Calendar',
-      description: 'Access and manage your calendar events',
-      icon: Calendar,
-      status: 'checking',
-      usedByAgents: ['Personal Assistant AI'],
-      permissions: [
-        'Read events',
-        'Create events',
-        'Manage calendars'
-      ]
-    }
-  ]);
-  const [isChecking, setIsChecking] = useState(true);
   const { toast } = useToast();
 
-  useEffect(() => {
-    checkConnectorStatus();
-  }, []);
+  const { data: connectorStatus, isLoading, error } = useQuery<Record<string, boolean>>({
+    queryKey: ['/api/connectors/status'],
+  });
 
-  const checkConnectorStatus = async () => {
-    setIsChecking(true);
-    try {
-      const response = await fetch('/api/connectors/status');
-      const data = await response.json();
-      
-      setConnectors(prev => prev.map(connector => ({
-        ...connector,
-        status: data[connector.id] ? 'connected' : 'disconnected'
-      })));
-    } catch (error) {
-      console.error('Error checking connector status:', error);
-      setConnectors(prev => prev.map(c => ({ ...c, status: 'disconnected' })));
-    } finally {
-      setIsChecking(false);
-    }
-  };
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to load connector status",
+      variant: "destructive",
+    });
+  }
 
   const openReplitConnectors = () => {
     toast({
@@ -102,7 +89,7 @@ export default function Connectors() {
           </AlertDescription>
         </Alert>
 
-        {isChecking && (
+        {isLoading && (
           <div className="flex items-center gap-2 text-muted-foreground mb-6">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span className="text-sm">Checking connection status...</span>
@@ -110,10 +97,9 @@ export default function Connectors() {
         )}
 
         <div className="grid gap-6">
-          {connectors.map((connector) => {
+          {CONNECTOR_DEFINITIONS.map((connector) => {
             const Icon = connector.icon;
-            const isConnected = connector.status === 'connected';
-            const isChecking = connector.status === 'checking';
+            const isConnected = connectorStatus?.[connector.id] === true;
 
             return (
               <Card key={connector.id} data-testid={`connector-${connector.id}`}>
@@ -126,42 +112,35 @@ export default function Connectors() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <CardTitle className="text-xl">{connector.name}</CardTitle>
-                          {isConnected && (
+                          {!isLoading && isConnected && (
                             <Badge variant="default" className="gap-1">
                               <CheckCircle className="w-3 h-3" />
                               Connected
-                            </Badge>
-                          )}
-                          {connector.status === 'disconnected' && (
-                            <Badge variant="secondary" className="gap-1">
-                              <AlertCircle className="w-3 h-3" />
-                              Not Connected
                             </Badge>
                           )}
                         </div>
                         <CardDescription>{connector.description}</CardDescription>
                       </div>
                     </div>
-                    {!isChecking && (
-                      <div className="flex flex-col gap-2 items-end">
-                        {isConnected && (
-                          <Badge variant="default" className="gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Active
-                          </Badge>
-                        )}
-                        {!isConnected && (
-                          <Button
-                            onClick={openReplitConnectors}
-                            variant="default"
-                            size="sm"
-                            data-testid={`button-connect-${connector.id}`}
-                          >
-                            Connect via Replit
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex flex-col gap-2 items-end">
+                      {isLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      ) : isConnected ? (
+                        <Badge variant="default" className="gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Button
+                          onClick={openReplitConnectors}
+                          variant="default"
+                          size="sm"
+                          data-testid={`button-connect-${connector.id}`}
+                        >
+                          Connect via Replit
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
