@@ -2,7 +2,7 @@ import { query, tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk"
 import type { IStorage } from "./storage";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
-import { readGmailTool, readCalendarTool } from "./google-integrations";
+import { readGmailTool, sendGmailTool, readCalendarTool } from "./google-integrations";
 
 // Helper function to format timestamp
 function formatTimestamp(): string {
@@ -308,6 +308,7 @@ const customToolsServer = createSdkMcpServer({
     callOpenRouterChatTool,
     generateImageTool,
     readGmailTool,
+    sendGmailTool,
     readCalendarTool
   ]
 });

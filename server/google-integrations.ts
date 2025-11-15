@@ -182,6 +182,77 @@ export const readGmailTool = tool(
   }
 );
 
+// MCP Tool: Send email via Gmail
+export const sendGmailTool = tool(
+  "send_gmail",
+  "Send an email via Gmail. Compose and send emails to one or more recipients with optional CC, BCC, subject, and body.",
+  {
+    to: z.string().describe("Recipient email address(es), comma-separated for multiple recipients"),
+    subject: z.string().describe("Email subject line"),
+    body: z.string().describe("Email body content (plain text or HTML)"),
+    cc: z.string().optional().describe("CC email address(es), comma-separated"),
+    bcc: z.string().optional().describe("BCC email address(es), comma-separated"),
+    isHtml: z.boolean().optional().describe("Whether the body is HTML (default: false)")
+  },
+  async (args) => {
+    try {
+      const gmail = await getUncachableGmailClient();
+      
+      // Build email headers
+      const headers = [
+        `To: ${args.to}`,
+        `Subject: ${args.subject}`
+      ];
+      
+      if (args.cc) {
+        headers.push(`Cc: ${args.cc}`);
+      }
+      
+      if (args.bcc) {
+        headers.push(`Bcc: ${args.bcc}`);
+      }
+      
+      headers.push(`Content-Type: ${args.isHtml ? 'text/html' : 'text/plain'}; charset=utf-8`);
+      headers.push('');
+      headers.push(args.body);
+      
+      // Encode email in base64url format
+      const email = headers.join('\r\n');
+      const encodedEmail = Buffer.from(email)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      
+      // Send the email
+      const response = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: encodedEmail
+        }
+      });
+      
+      return {
+        content: [{
+          type: "text" as const,
+          text: `✅ Email sent successfully!\n\n` +
+                `To: ${args.to}\n` +
+                `Subject: ${args.subject}\n` +
+                `Message ID: ${response.data.id}\n` +
+                `Thread ID: ${response.data.threadId}`
+        }]
+      };
+    } catch (error: any) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: `❌ Error sending email: ${error.message || 'Unknown error'}`
+        }]
+      };
+    }
+  }
+);
+
 // MCP Tool: Read upcoming calendar events
 export const readCalendarTool = tool(
   "read_calendar",

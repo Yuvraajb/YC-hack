@@ -118,12 +118,13 @@ A polished full-stack web application where users submit tasks through a simple 
   - Environment variables:
     - `AI_INTEGRATIONS_ANTHROPIC_API_KEY` (auto-configured)
     - `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` (auto-configured)
-- **MCP Tools Available** (5 custom tools in MCP server):
+- **MCP Tools Available** (6 custom tools in MCP server):
   1. `call_openrouter_model` - Access 100+ AI models (GPT-4, Gemini, etc.)
   2. `call_openrouter_chat` - Structured multi-model conversations
   3. `generate_image` - Real image generation via Flux 1.1 Pro
-  4. `read_gmail` - Read recent Gmail inbox emails
-  5. `read_calendar` - Read upcoming Google Calendar events
+  4. `read_gmail` - Read recent Gmail inbox emails (requires gmail.readonly scope - not yet available)
+  5. `send_gmail` - Send emails via Gmail with to/cc/bcc, subject, body (works!)
+  6. `read_calendar` - Read upcoming Google Calendar events
 - **Multi-Model Support**: OpenRouter API
   - Provides access to 100+ AI models as MCP tools
   - Includes GPT-4, Claude, Gemini, LLaMA, Flux (image generation), etc.
