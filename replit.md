@@ -60,13 +60,20 @@ A polished full-stack web application where users submit tasks through a simple 
     - Robust error handling for async state updates and log reordering
   - **Connectors Page & Architecture (2025-11-15)**:
     - Created `/connectors` page showing status for 19 available Replit connectors
-    - Supported connectors: Gmail, Calendar, Google Sheets, Stripe, Twilio, Notion, GitHub, HubSpot, Jira, Linear, OneDrive, Outlook, Resend, SendGrid, Salesforce, SharePoint, YouTube, Zendesk, ClickUp
-    - Added `GET /api/connectors/status` endpoint to check authorization for all connectors
+    - **Supported connectors** (categorized):
+      - **Productivity**: Google Calendar, Google Sheets, Notion, ClickUp
+      - **Communication**: Gmail, Outlook, Twilio, Resend, SendGrid, YouTube
+      - **Development**: GitHub, Jira, Linear
+      - **Business**: Stripe, HubSpot, Salesforce, Zendesk
+      - **Storage**: OneDrive, SharePoint
+    - Added `GET /api/connectors/status` endpoint with explicit ID-to-slug mapping
     - **Key Architecture**: Authorize once via Replit = all agents get access
     - Tokens fetched server-side from Replit's API, shared across all agent executions
     - No per-agent authorization needed - single OAuth flow covers entire marketplace
-    - Status page shows which agents use which connectors, categorized by type (productivity, communication, development, business, storage)
+    - Each connector has unique icon, category badge, permissions list, and status indicator
+    - Backend maintains explicit mapping between frontend IDs and Replit connector slugs
     - **Gmail Scope Issue**: Current Gmail connector has limited scopes - requires re-authorization in Replit for full email reading (gmail.readonly scope)
+    - UI note clarifies Gmail/Calendar statuses are verified real-time, other connectors show estimated status
 
 ## Project Architecture
 
