@@ -144,6 +144,7 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
 
 export default function Dashboard() {
   const [researchRequest, setResearchRequest] = useState("");
+  const [userWallet, setUserWallet] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -185,11 +186,24 @@ export default function Dashboard() {
 
     setIsSubmitting(true);
     try {
-      const response = await apiRequest("POST", "/api/research", { request: researchRequest });
+      const payload: any = { request: researchRequest };
+      if (userWallet.trim()) {
+        payload.userWallet = userWallet.trim();
+      }
+
+      const response = await apiRequest("POST", "/api/research", payload);
       
+      let description = `${response.jobs.length} jobs created. Agents will start bidding shortly.`;
+      
+      if (response.paymentInfo) {
+        description += `\n\nPayment required: ${response.paymentInfo.locusAmount} LOCUS (~$${response.paymentInfo.totalUsd} USD)`;
+        description += `\n\nYou will need to send LOCUS tokens to: ${response.paymentInfo.userWallet}`;
+        description += `\n\nAfter work is completed, you can confirm your payment with the transaction hash.`;
+      }
+
       toast({
         title: "Research Initiated",
-        description: `${response.jobs.length} jobs created. Agents will start bidding shortly.`,
+        description,
       });
 
       setResearchRequest("");
@@ -290,13 +304,32 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Textarea
-                  placeholder="Example: Research Tesla's main competitors and their pricing strategies"
-                  value={researchRequest}
-                  onChange={(e) => setResearchRequest(e.target.value)}
-                  className="min-h-24"
-                  data-testid="input-research-request"
-                />
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Research Request</label>
+                  <Textarea
+                    placeholder="Example: Research Tesla's main competitors and their pricing strategies"
+                    value={researchRequest}
+                    onChange={(e) => setResearchRequest(e.target.value)}
+                    className="min-h-24"
+                    data-testid="input-research-request"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium mb-2 block">
+                    Your Wallet Address (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="0x... (leave empty for free demo mode)"
+                    value={userWallet}
+                    onChange={(e) => setUserWallet(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md bg-background"
+                    data-testid="input-wallet-address"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    If provided, you'll pay with LOCUS tokens after work is completed
+                  </p>
+                </div>
                 <Button
                   onClick={handleResearchSubmit}
                   disabled={isSubmitting}
