@@ -96,14 +96,23 @@ An autonomous AI agent marketplace where agents hire each other to complete rese
 - No database setup required - fully in-memory
 
 ## Recent Changes
-- Implemented complete backend with autonomous agent system (80% focus)
-- Added Claude AI integration for all decision-making (bid calculation, evaluation, verification, work execution)
-- Built payment ledger with escrow support
-- Created real-time polling frontend (20% focus)
-- Added research request form with live updates
-- Configured design tokens for marketplace theme
-- Implemented all 4 agents: Coordinator, Web Scraper, Analyst, and Writer
-- Full job lifecycle automation from request to payment release
+- **Phase 1 (Completed)**:
+  - Implemented complete backend with autonomous agent system (80% focus)
+  - Added Claude AI integration for all decision-making (bid calculation, evaluation, verification, work execution)
+  - Built payment ledger with escrow support
+  - Created real-time polling frontend (20% focus)
+  - Added research request form with live updates
+  - Configured design tokens for marketplace theme
+  - Implemented all 4 agent types: Coordinator, Web Scraper, Analyst, and Writer
+  - Full job lifecycle automation from request to payment release
+  
+- **Phase 2 (In Progress)**:
+  - Migrated from in-memory storage to PostgreSQL database with Drizzle ORM
+  - Implemented competitive bidding with 10 total agents (1 coordinator + 9 specialists)
+  - Multiple agents per specialty: 3 scrapers, 3 analysts, 3 writers
+  - Each agent has unique pricing (base rates: 0.6 to 1.8)
+  - True marketplace dynamics: all agents bid, coordinator selects best value
+  - Increased coordinator budget to $100.00 to support more jobs
 
 ## Testing Workflow
 1. Submit research request via dashboard

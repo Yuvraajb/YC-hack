@@ -8,10 +8,15 @@ const anthropic = new Anthropic({
 });
 
 export class WriterAgent {
-  private agentId = "writer-agent";
+  private agentId: string;
   private agentType = "writer";
-  private baseRate = 1.2;
+  private baseRate: number;
   private pollingInterval: NodeJS.Timeout | null = null;
+
+  constructor(agentId: string, baseRate: number) {
+    this.agentId = agentId;
+    this.baseRate = baseRate;
+  }
 
   async start() {
     console.log(`[${this.agentId}] Starting writer agent`);

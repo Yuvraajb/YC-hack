@@ -11,9 +11,9 @@ const app = express();
 
 // Initialize agents
 let coordinatorAgent: CoordinatorAgent;
-let scraperAgent: ScraperAgent;
-let analystAgent: AnalystAgent;
-let writerAgent: WriterAgent;
+let scraperAgents: ScraperAgent[] = [];
+let analystAgents: AnalystAgent[] = [];
+let writerAgents: WriterAgent[] = [];
 
 declare module 'http' {
   interface IncomingMessage {
@@ -121,15 +121,60 @@ async function initializeAgents() {
       await storage.createAgent({
         name: "Coordinator Agent",
         type: "coordinator",
-        walletBalance: "50.00",
+        walletBalance: "100.00",
         status: "available",
         pricingModel: null,
       });
 
-      // Create specialist agents (start with $0)
+      // Create multiple competing scrapers with different pricing
       await storage.createAgent({
-        name: "Web Scraper Agent",
+        name: "Fast Scraper",
         type: "web_scraper",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 0.8,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      await storage.createAgent({
+        name: "Premium Scraper",
+        type: "web_scraper",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.2,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      await storage.createAgent({
+        name: "Budget Scraper",
+        type: "web_scraper",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 0.6,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      // Create multiple competing analysts
+      await storage.createAgent({
+        name: "Data Analyst Pro",
+        type: "analysis",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.4,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      await storage.createAgent({
+        name: "Quick Analyst",
+        type: "analysis",
         walletBalance: "0.00",
         status: "available",
         pricingModel: {
@@ -139,8 +184,31 @@ async function initializeAgents() {
       });
 
       await storage.createAgent({
-        name: "Analysis Agent",
+        name: "Expert Analyst",
         type: "analysis",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.8,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      // Create multiple competing writers
+      await storage.createAgent({
+        name: "Content Writer",
+        type: "writer",
+        walletBalance: "0.00",
+        status: "available",
+        pricingModel: {
+          baseRate: 1.0,
+          complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
+        },
+      });
+
+      await storage.createAgent({
+        name: "Technical Writer",
+        type: "writer",
         walletBalance: "0.00",
         status: "available",
         pricingModel: {
@@ -150,12 +218,12 @@ async function initializeAgents() {
       });
 
       await storage.createAgent({
-        name: "Writer Agent",
+        name: "Fast Writer",
         type: "writer",
         walletBalance: "0.00",
         status: "available",
         pricingModel: {
-          baseRate: 1.2,
+          baseRate: 0.9,
           complexityMultiplier: { simple: 1, medium: 1.5, complex: 2 },
         },
       });
@@ -169,25 +237,46 @@ async function initializeAgents() {
   }
 }
 
-function startAgents() {
+async function startAgents() {
   log("Starting autonomous agents...");
 
+  // Start coordinator
   coordinatorAgent = new CoordinatorAgent();
-  scraperAgent = new ScraperAgent();
-  analystAgent = new AnalystAgent();
-  writerAgent = new WriterAgent();
-
   coordinatorAgent.start();
-  scraperAgent.start();
-  analystAgent.start();
-  writerAgent.start();
 
-  log("✓ All agents are now autonomously operating");
+  // Get all agents from database and start specialists
+  const allAgents = await storage.getAllAgents();
+  
+  // Start all web scrapers
+  const scrapers = allAgents.filter(a => a.type === "web_scraper");
+  scraperAgents = scrapers.map(agent => {
+    const scraper = new ScraperAgent(agent.id, agent.pricingModel?.baseRate || 1.0);
+    scraper.start();
+    return scraper;
+  });
+
+  // Start all analysts
+  const analysts = allAgents.filter(a => a.type === "analysis");
+  analystAgents = analysts.map(agent => {
+    const analyst = new AnalystAgent(agent.id, agent.pricingModel?.baseRate || 1.5);
+    analyst.start();
+    return analyst;
+  });
+
+  // Start all writers
+  const writers = allAgents.filter(a => a.type === "writer");
+  writerAgents = writers.map(agent => {
+    const writer = new WriterAgent(agent.id, agent.pricingModel?.baseRate || 1.2);
+    writer.start();
+    return writer;
+  });
+
+  log(`✓ All agents are now autonomously operating (${1 + scraperAgents.length + analystAgents.length + writerAgents.length} total)`);
 }
 
 function stopAgents() {
   if (coordinatorAgent) coordinatorAgent.stop();
-  if (scraperAgent) scraperAgent.stop();
-  if (analystAgent) analystAgent.stop();
-  if (writerAgent) writerAgent.stop();
+  scraperAgents.forEach(agent => agent.stop());
+  analystAgents.forEach(agent => agent.stop());
+  writerAgents.forEach(agent => agent.stop());
 }

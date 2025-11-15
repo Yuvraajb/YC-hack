@@ -2,10 +2,15 @@ import { storage } from "../storage";
 import { calculateBid, performAnalysis } from "../anthropic";
 
 export class AnalystAgent {
-  private agentId = "analysis-agent";
+  private agentId: string;
   private agentType = "analysis";
-  private baseRate = 1.5;
+  private baseRate: number;
   private pollingInterval: NodeJS.Timeout | null = null;
+
+  constructor(agentId: string, baseRate: number) {
+    this.agentId = agentId;
+    this.baseRate = baseRate;
+  }
 
   async start() {
     console.log(`[${this.agentId}] Starting analysis agent`);

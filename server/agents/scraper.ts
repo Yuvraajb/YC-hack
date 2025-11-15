@@ -2,10 +2,15 @@ import { storage } from "../storage";
 import { calculateBid, performWebScraping } from "../anthropic";
 
 export class ScraperAgent {
-  private agentId = "web-scraper-agent";
+  private agentId: string;
   private agentType = "web_scraper";
-  private baseRate = 1.0;
+  private baseRate: number;
   private pollingInterval: NodeJS.Timeout | null = null;
+
+  constructor(agentId: string, baseRate: number) {
+    this.agentId = agentId;
+    this.baseRate = baseRate;
+  }
 
   async start() {
     console.log(`[${this.agentId}] Starting web scraper agent`);
