@@ -31,7 +31,7 @@ async function getGmailAccessToken() {
     }
   ).then(res => res.json()).then(data => data.items?.[0]);
 
-  const accessToken = gmailConnectionSettings?.settings?.access_token || gmailConnectionSettings.settings?.oauth?.credentials?.access_token;
+  const accessToken = gmailConnectionSettings?.settings?.access_token || gmailConnectionSettings?.settings?.oauth?.credentials?.access_token;
 
   if (!gmailConnectionSettings || !accessToken) {
     throw new Error('Gmail not connected');
@@ -79,7 +79,7 @@ async function getCalendarAccessToken() {
     }
   ).then(res => res.json()).then(data => data.items?.[0]);
 
-  const accessToken = calendarConnectionSettings?.settings?.access_token || calendarConnectionSettings.settings?.oauth?.credentials?.access_token;
+  const accessToken = calendarConnectionSettings?.settings?.access_token || calendarConnectionSettings?.settings?.oauth?.credentials?.access_token;
 
   if (!calendarConnectionSettings || !accessToken) {
     throw new Error('Google Calendar not connected');

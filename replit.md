@@ -1,7 +1,7 @@
 # Agentic Marketplace
 
 ## Overview
-A polished full-stack web application where users submit tasks through a simple interface, three AI agents competitively bid on jobs, the best agent is automatically selected, executes the task using Anthropic AI (claude-sonnet-4-5), and payment is processed - all with real-time visualization in a developer dashboard.
+A polished full-stack web application where users submit tasks through a simple interface, AI agents bid on jobs and execute tasks using Claude Agent SDK (claude-sonnet-4-5) with real MCP tools for Gmail, Google Calendar, multi-model AI access, and image generation. Features a Personal Assistant AI agent that reads your Gmail and Calendar to provide intelligent summaries.
 
 ## Recent Changes
 - **2025-11-15**: Complete implementation of the Agentic Marketplace
@@ -34,6 +34,20 @@ A polished full-stack web application where users submit tasks through a simple 
     - Updated all preset agents and WebExplorer Vision with OpenRouter tools
     - Agents can now orchestrate multi-model workflows (e.g., GPT-4 for analysis + Flux for images)
     - Cost tracking via generation IDs (check openrouter.ai/activity for detailed costs)
+  - **Google Integrations (Gmail & Calendar)**:
+    - Integrated Replit's native Gmail and Google Calendar connectors
+    - Created server/google-integrations.ts with OAuth-based client helpers
+    - Implemented 2 MCP tools:
+      - `read_gmail`: Fetch recent inbox emails with metadata
+      - `read_calendar`: Fetch upcoming calendar events
+    - Added tools to Claude Agent SDK MCP server
+    - OAuth tokens auto-refresh via Replit integration system
+  - **Production Agent Created - Demo Agents Deleted**:
+    - Deleted all 7 demo marketplace agents
+    - Created "Personal Assistant AI" - real production agent
+    - Features: Gmail inbox reading, Calendar event fetching, AI-powered summaries
+    - Uses multi-model orchestration (read data → GPT-4/Claude analysis → summary)
+    - Pricing: $8-25 (base $15), balanced negotiation strategy
 
 ## Project Architecture
 
@@ -47,7 +61,13 @@ A polished full-stack web application where users submit tasks through a simple 
 
 ### Backend
 - **Storage**: In-memory storage (MemStorage) for jobs, bids, payments, logs, developers, marketplace agents, reviews, negotiations
-- **Agents**: Three predefined AI agents with distinct bidding behaviors
+- **Production Agents**: 
+  - **Personal Assistant AI**: Productivity agent with Gmail/Calendar/AI summarization
+    - Reads Gmail inbox (10-15 recent emails)
+    - Fetches Calendar events (next 7 days)
+    - Uses GPT-4 or Claude via OpenRouter for intelligent summaries
+    - Provides actionable insights and schedule overviews
+- **Preset Job Agents** (for quick job execution):
   - Fast & Cheap (FastCoder): Low price, fast execution, moderate confidence
   - High Quality (QualityFirst): Higher price, thorough execution, high confidence
   - Balanced (SmartBalance): Balanced approach across all factors
@@ -67,6 +87,12 @@ A polished full-stack web application where users submit tasks through a simple 
   - Environment variables:
     - `AI_INTEGRATIONS_ANTHROPIC_API_KEY` (auto-configured)
     - `AI_INTEGRATIONS_ANTHROPIC_BASE_URL` (auto-configured)
+- **MCP Tools Available** (5 custom tools in MCP server):
+  1. `call_openrouter_model` - Access 100+ AI models (GPT-4, Gemini, etc.)
+  2. `call_openrouter_chat` - Structured multi-model conversations
+  3. `generate_image` - Real image generation via Flux 1.1 Pro
+  4. `read_gmail` - Read recent Gmail inbox emails
+  5. `read_calendar` - Read upcoming Google Calendar events
 - **Multi-Model Support**: OpenRouter API
   - Provides access to 100+ AI models as MCP tools
   - Includes GPT-4, Claude, Gemini, LLaMA, Flux (image generation), etc.
@@ -76,6 +102,13 @@ A polished full-stack web application where users submit tasks through a simple 
     - Token usage tracking per API call
     - Generation IDs for cost lookup at openrouter.ai/activity
     - Secure API key management
+
+- **Google Integrations**: Gmail & Calendar (Replit Native)
+  - Gmail: Read inbox emails with full metadata (sender, subject, date, snippet)
+  - Calendar: Read upcoming events with times, locations, descriptions
+  - OAuth authentication handled automatically by Replit
+  - Access tokens auto-refresh on expiry
+  - MCP tools: `read_gmail`, `read_calendar`
 
 ## Tech Stack
 - Frontend: React, Wouter, TanStack Query, Shadcn UI, Tailwind CSS
