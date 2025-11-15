@@ -2,6 +2,7 @@ import { query, tool, createSdkMcpServer } from "@anthropic-ai/claude-agent-sdk"
 import type { IStorage } from "./storage";
 import { z } from "zod";
 import Anthropic from "@anthropic-ai/sdk";
+import { readGmailTool, readCalendarTool } from "./google-integrations";
 
 // Helper function to format timestamp
 function formatTimestamp(): string {
@@ -305,7 +306,9 @@ const customToolsServer = createSdkMcpServer({
   tools: [
     callOpenRouterModelTool,
     callOpenRouterChatTool,
-    generateImageTool
+    generateImageTool,
+    readGmailTool,
+    readCalendarTool
   ]
 });
 
@@ -364,6 +367,18 @@ export async function executeAgentTask(options: AgentExecutionOptions): Promise<
     // Add custom tools (MCP tools are prefixed with "mcp__<server-name>__<tool-name>")
     if (enabledTools.includes("generate_image") || enabledTools.includes("image_generation")) {
       allowedTools.push("mcp__custom-tools__generate_image");
+    }
+    if (enabledTools.includes("call_openrouter_model") || enabledTools.includes("multi_model")) {
+      allowedTools.push("mcp__custom-tools__call_openrouter_model");
+    }
+    if (enabledTools.includes("call_openrouter_chat") || enabledTools.includes("multi_model")) {
+      allowedTools.push("mcp__custom-tools__call_openrouter_chat");
+    }
+    if (enabledTools.includes("read_gmail") || enabledTools.includes("gmail")) {
+      allowedTools.push("mcp__custom-tools__read_gmail");
+    }
+    if (enabledTools.includes("read_calendar") || enabledTools.includes("calendar")) {
+      allowedTools.push("mcp__custom-tools__read_calendar");
     }
 
     const apiKey = process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;

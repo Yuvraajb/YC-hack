@@ -44,6 +44,7 @@ export interface IStorage {
   getAgentsByDeveloper(developerId: string): Promise<MarketplaceAgent[]>;
   updateMarketplaceAgent(id: string, updates: Partial<MarketplaceAgent>): Promise<MarketplaceAgent | undefined>;
   deleteMarketplaceAgent(id: string): Promise<boolean>;
+  deleteAllMarketplaceAgents(): Promise<number>;
   
   // Agent Reviews
   createAgentReview(review: InsertAgentReview): Promise<AgentReview>;
@@ -253,6 +254,12 @@ export class MemStorage implements IStorage {
     return this.marketplaceAgents.delete(id);
   }
 
+  async deleteAllMarketplaceAgents(): Promise<number> {
+    const count = this.marketplaceAgents.size;
+    this.marketplaceAgents.clear();
+    return count;
+  }
+
   // Agent Review methods
   async createAgentReview(insertReview: InsertAgentReview): Promise<AgentReview> {
     const id = randomUUID();
@@ -316,129 +323,51 @@ export class MemStorage implements IStorage {
 
 export const storage = new MemStorage();
 
-// Seed demo agents
-async function seedDemoAgents() {
-  // Create demo developer
-  const demoDev = await storage.createDeveloper({
-    name: "Demo Developer",
-    email: "demo@marketplace.com",
-  });
-
-  // Seed marketplace agents
-  const agents = [
-    {
-      developerId: demoDev.id,
-      name: "CodeMaster Pro",
-      description: "Expert coding assistant specialized in full-stack development with React, Node.js, and Python. Handles complex refactoring, debugging, and architecture design.",
-      category: "Coding",
-      systemPrompt: "You are CodeMaster Pro, an expert software engineer with 10+ years of experience. You write clean, maintainable code following best practices. You excel at debugging, refactoring, and explaining complex concepts.",
-      minPrice: 8,
-      maxPrice: 25,
-      basePrice: 15,
-      negotiationStrategy: "balanced",
-      capabilities: ["Code Generation", "Problem Solving", "Task Automation"],
-      toolsEnabled: ["File Operations", "Code Execution", "Web Search"],
-      tags: ["React", "Node.js", "Python", "Full-Stack"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "DataWiz Analyst",
-      description: "Advanced data analysis agent with expertise in statistics, machine learning, and visualization. Perfect for insights extraction and predictive modeling.",
-      category: "Data Analysis",
-      systemPrompt: "You are DataWiz, a data scientist specializing in statistical analysis and machine learning. You excel at finding patterns, creating visualizations, and providing actionable insights from data.",
-      minPrice: 12,
-      maxPrice: 30,
-      basePrice: 20,
-      negotiationStrategy: "aggressive",
-      capabilities: ["Data Analysis", "Natural Language Processing", "Research & Summarization"],
-      toolsEnabled: ["Data Visualization", "Code Execution", "File Operations"],
-      tags: ["Statistics", "ML", "Visualization", "Python"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "ContentCraft Writer",
-      description: "Creative writing specialist for blogs, marketing copy, and technical documentation. Adapts tone and style to your brand voice.",
-      category: "Writing",
-      systemPrompt: "You are ContentCraft, a professional writer with expertise in various writing styles. You create engaging, well-researched content that resonates with target audiences.",
-      minPrice: 5,
-      maxPrice: 18,
-      basePrice: 10,
-      negotiationStrategy: "conservative",
-      capabilities: ["Creative Writing", "Research & Summarization", "Natural Language Processing"],
-      toolsEnabled: ["Web Search", "File Operations"],
-      tags: ["Copywriting", "Blogs", "Marketing", "SEO"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "ResearchBot Scholar",
-      description: "Academic research assistant that finds, analyzes, and summarizes scientific papers and technical documents with citations.",
-      category: "Research",
-      systemPrompt: "You are ResearchBot Scholar, an academic research assistant. You excel at finding relevant sources, synthesizing information, and providing well-cited summaries.",
-      minPrice: 10,
-      maxPrice: 28,
-      basePrice: 18,
-      negotiationStrategy: "balanced",
-      capabilities: ["Research & Summarization", "Natural Language Processing", "Problem Solving"],
-      toolsEnabled: ["Web Search", "File Operations"],
-      tags: ["Academic", "Citations", "Analysis", "Summarization"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "SupportGenius AI",
-      description: "Customer support specialist trained on handling tickets, troubleshooting, and providing empathetic, solution-focused responses.",
-      category: "Customer Support",
-      systemPrompt: "You are SupportGenius, a customer support expert. You provide helpful, empathetic responses to customer inquiries, troubleshoot issues, and ensure customer satisfaction.",
-      minPrice: 4,
-      maxPrice: 15,
-      basePrice: 8,
-      negotiationStrategy: "conservative",
-      capabilities: ["Natural Language Processing", "Problem Solving", "Task Automation"],
-      toolsEnabled: ["Web Search", "API Calls", "File Operations"],
-      tags: ["Support", "Troubleshooting", "Customer Service"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "DesignFlow Creative",
-      description: "Creative design assistant for brainstorming, mood boards, and design system documentation. Specialized in UI/UX concepts.",
-      category: "Creative",
-      systemPrompt: "You are DesignFlow, a creative design expert with a focus on UI/UX. You excel at generating creative concepts, design systems, and user experience recommendations.",
-      minPrice: 7,
-      maxPrice: 22,
-      basePrice: 12,
-      negotiationStrategy: "balanced",
-      capabilities: ["Creative Writing", "Problem Solving", "Research & Summarization"],
-      toolsEnabled: ["Image Generation", "Web Search", "File Operations"],
-      tags: ["UI/UX", "Design Systems", "Creative", "Branding"],
-      status: "published",
-    },
-    {
-      developerId: demoDev.id,
-      name: "WebExplorer Vision",
-      description: "Advanced web browsing and image generation agent. Can visit websites, extract information, and create visual content based on web findings. Perfect for research-to-visual workflows.",
-      category: "Research",
-      systemPrompt: "You are WebExplorer Vision, a specialized agent that combines web research capabilities with image generation. You excel at browsing websites, extracting key information, and then creating visual representations or images based on your findings. When given a task, you first use web search to gather information from the specified website or topic, then use image generation to create relevant visuals. You provide detailed descriptions of both your research findings and the images you generate.",
-      minPrice: 10,
-      maxPrice: 30,
-      basePrice: 18,
-      negotiationStrategy: "balanced",
-      capabilities: ["Web Browsing", "Image Generation", "Research & Summarization", "Creative Content"],
-      toolsEnabled: ["WebSearch", "generate_image", "call_openrouter_model", "call_openrouter_chat"],
-      tags: ["Web Research", "Visual Content", "Image Generation", "Data Extraction"],
-      status: "published",
-    },
-  ];
-
-  for (const agent of agents) {
-    await storage.createMarketplaceAgent(agent);
+// Seed real production agents
+async function seedRealAgents() {
+  // Delete all existing demo agents first
+  const deletedCount = await storage.deleteAllMarketplaceAgents();
+  if (deletedCount > 0) {
+    console.log(`Deleted ${deletedCount} demo marketplace agents`);
   }
 
-  console.log(`Seeded ${agents.length} demo marketplace agents`);
+  // Create real developer
+  const realDev = await storage.createDeveloper({
+    name: "AI Agent Builder",
+    email: "agent.builder@marketplace.com",
+  });
+
+  // Create Personal Assistant agent with Gmail and Calendar access
+  const personalAssistant = await storage.createMarketplaceAgent({
+    developerId: realDev.id,
+    name: "Personal Assistant AI",
+    description: "Your intelligent personal assistant that reads your Gmail inbox and Google Calendar, then uses advanced AI models to provide comprehensive summaries of your upcoming events and recent emails. Perfect for staying organized and informed.",
+    category: "Productivity",
+    systemPrompt: `You are Personal Assistant AI, a highly capable personal productivity agent with access to the user's Gmail and Google Calendar.
+
+Your workflow:
+1. First, use read_gmail to fetch the user's most recent emails (typically 10-15)
+2. Then, use read_calendar to fetch upcoming calendar events (next 7 days by default)
+3. Use call_openrouter_model with a powerful AI model (like GPT-4 or Claude) to analyze and summarize both the emails and calendar events
+4. Present a clear, organized summary that includes:
+   - Key upcoming events with dates and times
+   - Important emails that require attention
+   - Action items or deadlines
+   - Overall schedule overview
+
+Be concise but thorough. Focus on actionable insights. Use markdown formatting for clarity.`,
+    minPrice: 8,
+    maxPrice: 25,
+    basePrice: 15,
+    negotiationStrategy: "balanced",
+    capabilities: ["Email Management", "Calendar Management", "AI Summarization", "Task Prioritization"],
+    toolsEnabled: ["read_gmail", "read_calendar", "call_openrouter_model", "call_openrouter_chat"],
+    tags: ["Gmail", "Google Calendar", "Productivity", "AI Summary", "Personal Assistant"],
+    status: "published",
+  });
+
+  console.log(`Created Personal Assistant AI agent (${personalAssistant.id})`);
 }
 
-// Seed on initialization
-seedDemoAgents().catch(console.error);
+// Seed real agents on initialization
+seedRealAgents().catch(console.error);
