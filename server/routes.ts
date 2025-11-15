@@ -8,10 +8,13 @@ import { randomUUID } from "crypto";
 
 // Using Replit AI Integrations for Anthropic access
 if (!process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY || !process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL) {
-  console.error("Missing Anthropic AI Integration environment variables");
+  console.error("WARNING: Missing Anthropic AI Integration environment variables. Job execution will fail.");
+  console.error("Please ensure the Anthropic integration is properly installed.");
 }
 
 const anthropic = new Anthropic({
+  // Note: AI_INTEGRATIONS_ANTHROPIC_API_KEY is a dummy value required by the SDK
+  // Actual authentication happens via AI_INTEGRATIONS_ANTHROPIC_BASE_URL
   apiKey: process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY || "dummy-key",
   baseURL: process.env.AI_INTEGRATIONS_ANTHROPIC_BASE_URL,
 });
@@ -190,9 +193,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ output });
     } catch (error: any) {
-      await addLog(id, "error", `Execution failed: ${error.message}`);
+      const errorMessage = error.message || "Unknown error occurred";
+      await addLog(id, "error", `Execution failed: ${errorMessage}`);
       await storage.updateJob(id, { status: "failed" });
-      res.status(500).json({ error: error.message });
+      
+      // Provide more context for common errors
+      if (errorMessage.includes("Missing apiKey") || errorMessage.includes("401")) {
+        res.status(500).json({ 
+          error: "AI Integration not properly configured. Please check Anthropic integration setup.",
+          details: errorMessage 
+        });
+      } else {
+        res.status(500).json({ error: errorMessage });
+      }
     }
   });
 
