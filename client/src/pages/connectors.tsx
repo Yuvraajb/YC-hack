@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Mail, Calendar, CheckCircle, Loader2, Plug, Shield, Info } from "lucide-react";
+import { Mail, Calendar, CheckCircle, Loader2, Plug, Shield, Info, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 
@@ -45,17 +46,19 @@ const CONNECTOR_DEFINITIONS: ConnectorDefinition[] = [
 export default function Connectors() {
   const { toast } = useToast();
 
-  const { data: connectorStatus, isLoading, error } = useQuery<Record<string, boolean>>({
+  const { data: connectorStatus, isLoading, error, refetch } = useQuery<Record<string, boolean>>({
     queryKey: ['/api/connectors/status'],
   });
 
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load connector status",
-      variant: "destructive",
-    });
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load connector status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   const openReplitConnectors = () => {
     toast({
@@ -94,6 +97,24 @@ export default function Connectors() {
             <Loader2 className="w-4 h-4 animate-spin" />
             <span className="text-sm">Checking connection status...</span>
           </div>
+        )}
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Failed to load connector status. Please try again.</span>
+              <Button
+                onClick={() => refetch()}
+                variant="outline"
+                size="sm"
+                className="ml-4"
+                data-testid="button-retry-status"
+              >
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="grid gap-6">
